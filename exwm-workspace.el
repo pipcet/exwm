@@ -155,11 +155,11 @@ The optional FORCE option is for internal use only."
         (xcb:flush exwm--connection)))))
 
 (defun exwm-workspace--on-focus-in ()
-  "Fix unexpected frame switch."
+  "Handle frame switch."
   (let ((index (exwm-workspace-index (selected-frame))))
     (exwm--log "Focus on workspace %s" index)
     (when (and index (/= index exwm-workspace-current-index))
-      (exwm--log "Workspace was switched unexpectedly")
+      (exwm--log "Workspace was switched")
       (exwm-workspace-switch index))))
 
 (defun exwm-workspace-move-window (index &optional id)
@@ -266,7 +266,7 @@ The optional FORCE option is for internal use only."
                                                  xcb:EventMask:EnterWindow
                                                  xcb:EventMask:LeaveWindow)))))
   (xcb:flush exwm--connection)
-  ;; Handle unexpected frame switch
+  ;; Handle frame switch
   (add-hook 'focus-in-hook 'exwm-workspace--on-focus-in)
   ;; Switch to the first workspace
   (exwm-workspace-switch 0 t))
