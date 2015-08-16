@@ -40,32 +40,39 @@
                     (window-inside-pixel-edges window)))
          (x (elt edges 0))
          (y (elt edges 1))
+         (frame (window-frame window))
+         (workspace-index (exwm-workspace-index frame))
          (width (- (elt edges 2) (elt edges 0)))
          (height (- (elt edges 3) (elt edges 1))))
-    (xcb:+request exwm--connection
-        (make-instance 'xcb:ConfigureWindow
-                       :window id
-                       :value-mask (logior xcb:ConfigWindow:X
-                                           xcb:ConfigWindow:Y
-                                           xcb:ConfigWindow:Width
-                                           xcb:ConfigWindow:Height
-                                           xcb:ConfigWindow:StackMode)
-                       :x x :y y :width width :height height
-                       ;; In order to put non-floating window at bottom
-                       :stack-mode xcb:StackMode:Below))
-    (xcb:+request exwm--connection
-        (make-instance 'xcb:SendEvent
-                       :propagate 0 :destination id
-                       :event-mask xcb:EventMask:StructureNotify
-                       :event (xcb:marshal
-                               (make-instance 'xcb:ConfigureNotify
-                                              :event id :window id
-                                              :above-sibling xcb:Window:None
-                                              :x x :y y
-                                              :width width :height height
-                                              :border-width 0
-                                              :override-redirect 0)
-                               exwm--connection))))
+    (when (and workspace-index
+               (not (equal (exwm-workspace-index (with-current-buffer buffer exwm--frame))
+                           workspace-index)))
+      (exwm-workspace-move-window workspace-index id))
+    (unless (and buffer (with-current-buffer buffer exwm--fullscreen))
+      (xcb:+request exwm--connection
+          (make-instance 'xcb:ConfigureWindow
+                         :window id
+                         :value-mask (logior xcb:ConfigWindow:X
+                                             xcb:ConfigWindow:Y
+                                             xcb:ConfigWindow:Width
+                                             xcb:ConfigWindow:Height
+                                             xcb:ConfigWindow:StackMode)
+                         :x x :y y :width width :height height
+                         ;; In order to put non-floating window at bottom
+                         :stack-mode xcb:StackMode:Below))
+      (xcb:+request exwm--connection
+          (make-instance 'xcb:SendEvent
+                         :propagate 0 :destination id
+                         :event-mask xcb:EventMask:StructureNotify
+                         :event (xcb:marshal
+                                 (make-instance 'xcb:ConfigureNotify
+                                                :event id :window id
+                                                :above-sibling xcb:Window:None
+                                                :x x :y y
+                                                :width width :height height
+                                                :border-width 0
+                                                :override-redirect 0)
+                                 exwm--connection)))))
   (xcb:flush exwm--connection))
 
 (defun exwm-layout--hide (id)
