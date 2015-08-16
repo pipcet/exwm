@@ -76,7 +76,7 @@ It's updated in several occasions, and only used by `exwm-input--set-focus'.")
             (make-instance 'xcb:SetInputFocus
                            :revert-to xcb:InputFocus:Parent :focus id
                            :time xcb:Time:CurrentTime))
-      (xcb:flush exwm--connection))))
+      (xcb:flush exwm--connection)))))
 
 (defvar exwm-input--focus-window nil "The (Emacs) window to be focused.")
 (defvar exwm-input--redirected nil

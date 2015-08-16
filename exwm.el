@@ -153,7 +153,7 @@
     `(message (concat "[EXWM] " ,format-string) ,@args)))
 
 (defconst exwm--client-event-mask
-  (logior xcb:EventMask:StructureNotify xcb:EventMask:PropertyChange)
+  (logior xcb:EventMask:StructureNotify xcb:EventMask:PropertyChange xcb:EventMask:EnterWindow xcb:EventMask:LeaveWindow)
   "Event mask set on all managed windows.")
 
 (defvar exwm--connection nil "X connection.")

@@ -261,7 +261,9 @@ The optional FORCE option is for internal use only."
       (xcb:+request exwm--connection
           (make-instance 'xcb:ChangeWindowAttributes
                          :window window-id :value-mask xcb:CW:EventMask
-                         :event-mask xcb:EventMask:SubstructureRedirect))))
+                             :event-mask (logior xcb:EventMask:SubstructureRedirect
+                                                 xcb:EventMask:EnterWindow
+                                                 xcb:EventMask:LeaveWindow)))))
   (xcb:flush exwm--connection)
   ;; Handle unexpected frame switch
   (add-hook 'focus-in-hook 'exwm-workspace--on-focus-in)
