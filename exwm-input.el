@@ -312,27 +312,27 @@ It's updated in several occasions, and only used by `exwm-input--set-focus'.")
 (defun exwm-input--grab-keyboard (&optional id)
   "Grab all key events on window ID."
   (unless id (setq id (exwm--buffer->id (window-buffer))))
-  (cl-assert id)
-  (when (xcb:+request-checked+request-check exwm--connection
-            (make-instance 'xcb:GrabKey
-                           :owner-events 0 :grab-window id
-                           :modifiers xcb:ModMask:Any
-                           :key xcb:Grab:Any
-                           :pointer-mode xcb:GrabMode:Async
-                           :keyboard-mode xcb:GrabMode:Async))
-    (exwm--log "Failed to grab keyboard for #x%x" id))
-  (setq exwm--on-KeyPress 'exwm-input--on-KeyPress-line-mode))
+  (when id
+    (when (xcb:+request-checked+request-check exwm--connection
+              (make-instance 'xcb:GrabKey
+                             :owner-events 0 :grab-window id
+                             :modifiers xcb:ModMask:Any
+                             :key xcb:Grab:Any
+                             :pointer-mode xcb:GrabMode:Async
+                             :keyboard-mode xcb:GrabMode:Async))
+      (exwm--log "Failed to grab keyboard for #x%x" id))
+    (setq exwm--on-KeyPress 'exwm-input--on-KeyPress-line-mode)))
 
 (defun exwm-input--release-keyboard (&optional id)
   "Ungrab all key events on window ID."
   (unless id (setq id (exwm--buffer->id (window-buffer))))
-  (cl-assert id)
-  (when (xcb:+request-checked+request-check exwm--connection
-            (make-instance 'xcb:UngrabKey
-                           :key xcb:Grab:Any :grab-window id
-                           :modifiers xcb:ModMask:Any))
-    (exwm--log "Failed to release keyboard for #x%x" id))
-  (setq exwm--on-KeyPress 'exwm-input--on-KeyPress-char-mode))
+  (when id
+    (when (xcb:+request-checked+request-check exwm--connection
+              (make-instance 'xcb:UngrabKey
+                             :key xcb:Grab:Any :grab-window id
+                             :modifiers xcb:ModMask:Any))
+      (exwm--log "Failed to release keyboard for #x%x" id))
+    (setq exwm--on-KeyPress 'exwm-input--on-KeyPress-char-mode)))
 
 (defun exwm-input-grab-keyboard (&optional id)
   "Switch to line-mode."
