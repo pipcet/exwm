@@ -31,6 +31,15 @@
 
 (defvar exwm-workspace-number 4 "Number of workspaces (1 ~ 10).")
 (defvar exwm-workspace--list nil "List of all workspaces (Emacs frames).")
+
+(defun exwm-workspace-index (frame)
+  "Find the index of the X workspace represented by FRAME."
+  (catch 'return
+    (dotimes (i (length exwm-workspace--list))
+      (if (eq frame (elt exwm-workspace--list i))
+          (throw 'return i)))
+    nil))
+
 (defvar exwm-workspace--switch-map
   (let ((map (make-sparse-keymap)))
     (define-key map [t] (lambda () (interactive)))
@@ -69,7 +78,7 @@
     (dolist (i exwm--id-buffer-alist)
       (with-current-buffer (cdr i)
         (when exwm--frame
-          (setf (elt not-empty (cl-position exwm--frame exwm-workspace--list))
+          (setf (elt not-empty (exwm-workspace-index exwm--frame))
                 t))))
     (setq exwm-workspace--switch-history
           (mapcar
@@ -147,7 +156,7 @@ The optional FORCE option is for internal use only."
 
 (defun exwm-workspace--on-focus-in ()
   "Fix unexpected frame switch."
-  (let ((index (cl-position (selected-frame) exwm-workspace--list)))
+  (let ((index (exwm-workspace-index (selected-frame))))
     (exwm--log "Focus on workspace %s" index)
     (when (and index (/= index exwm-workspace-current-index))
       (exwm--log "Workspace was switched unexpectedly")
