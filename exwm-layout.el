@@ -182,7 +182,7 @@
   (let ((frame (selected-frame))
         (placeholder (get-buffer "*scratch*"))
         windows)
-    (if (not (memq frame exwm-workspace--list))
+    (if (not (exwm-workspace-index frame))
         (if (frame-parameter frame 'exwm-window-id)
             ;; Refresh a floating frame
             (progn

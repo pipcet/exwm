@@ -474,7 +474,7 @@
             ;; FIXME: check (may require other properties set)
             (when (memq xcb:Atom:_NET_WM_STATE_DEMANDS_ATTENTION props)
               (when (= action xcb:ewmh:_NET_WM_STATE_ADD)
-                (let ((idx (cl-position exwm--frame exwm-workspace--list)))
+                (let ((idx (exwm-workspace-index exwm--frame)))
                   (unless (= idx exwm-workspace-current-index)
                     (set-frame-parameter exwm--frame 'exwm--urgency t)
                     (exwm-workspace--update-switch-history))))
