@@ -98,7 +98,9 @@
       (let* ((outer-id (frame-parameter exwm--floating-frame 'exwm-outer-id))
              (geometry (xcb:+request-unchecked+reply exwm--connection
                            (make-instance 'xcb:GetGeometry
-                                          :drawable outer-id))))
+                                          :drawable outer-id)))
+             (width (frame-pixel-width exwm-workspace--current))
+             (height (frame-pixel-height exwm-workspace--current)))
         (setq exwm--floating-frame-geometry
               (vector (slot-value geometry 'x) (slot-value geometry 'y)
                       (slot-value geometry 'width)
@@ -111,10 +113,9 @@
                                                xcb:ConfigWindow:Width
                                                xcb:ConfigWindow:Height)
                            :x 0 :y 0
-                           :width (frame-pixel-width exwm-workspace--current)
-                           :height (frame-pixel-height
-                                    exwm-workspace--current))))
-      (xcb:flush exwm--connection))
+                           :width width
+                           :height height))))
+    (xcb:flush exwm--connection)
     (xcb:+request exwm--connection
         (make-instance 'xcb:ConfigureWindow
                        :window exwm--id
@@ -123,8 +124,21 @@
                                            xcb:ConfigWindow:Width
                                            xcb:ConfigWindow:Height)
                        :x 0 :y 0
-                       :width (frame-pixel-width exwm-workspace--current)
-                       :height (frame-pixel-height exwm-workspace--current)))
+                       :width width
+                       :height height))
+    (xcb:+request exwm--connection
+        (make-instance 'xcb:SendEvent
+                       :propagate 0 :destination exwm--id
+                       :event-mask xcb:EventMask:StructureNotify
+                       :event (xcb:marshal
+                               (make-instance 'xcb:ConfigureNotify
+                                              :event exwm--id :window exwm--id
+                                              :above-sibling xcb:Window:None
+                                              :x x :y y
+                                              :width width :height height
+                                              :border-width 0
+                                              :override-redirect 0)
+                               exwm--connection)))
     (xcb:+request exwm--connection
         (make-instance 'xcb:ewmh:set-_NET_WM_STATE
                        :window exwm--id
