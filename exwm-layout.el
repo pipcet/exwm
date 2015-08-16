@@ -42,30 +42,31 @@
          (y (elt edges 1))
          (width (- (elt edges 2) (elt edges 0)))
          (height (- (elt edges 3) (elt edges 1))))
-    (xcb:+request exwm--connection
-        (make-instance 'xcb:ConfigureWindow
-                       :window id
-                       :value-mask (logior xcb:ConfigWindow:X
-                                           xcb:ConfigWindow:Y
-                                           xcb:ConfigWindow:Width
-                                           xcb:ConfigWindow:Height
-                                           xcb:ConfigWindow:StackMode)
-                       :x x :y y :width width :height height
-                       ;; In order to put non-floating window at bottom
-                       :stack-mode xcb:StackMode:Below))
-    (xcb:+request exwm--connection
-        (make-instance 'xcb:SendEvent
-                       :propagate 0 :destination id
-                       :event-mask xcb:EventMask:StructureNotify
-                       :event (xcb:marshal
-                               (make-instance 'xcb:ConfigureNotify
-                                              :event id :window id
-                                              :above-sibling xcb:Window:None
-                                              :x x :y y
-                                              :width width :height height
-                                              :border-width 0
-                                              :override-redirect 0)
-                               exwm--connection))))
+    (unless (and buffer (with-current-buffer buffer exwm--fullscreen))
+      (xcb:+request exwm--connection
+          (make-instance 'xcb:ConfigureWindow
+                         :window id
+                         :value-mask (logior xcb:ConfigWindow:X
+                                             xcb:ConfigWindow:Y
+                                             xcb:ConfigWindow:Width
+                                             xcb:ConfigWindow:Height
+                                             xcb:ConfigWindow:StackMode)
+                         :x x :y y :width width :height height
+                         ;; In order to put non-floating window at bottom
+                         :stack-mode xcb:StackMode:Below))
+      (xcb:+request exwm--connection
+          (make-instance 'xcb:SendEvent
+                         :propagate 0 :destination id
+                         :event-mask xcb:EventMask:StructureNotify
+                         :event (xcb:marshal
+                                 (make-instance 'xcb:ConfigureNotify
+                                                :event id :window id
+                                                :above-sibling xcb:Window:None
+                                                :x x :y y
+                                                :width width :height height
+                                                :border-width 0
+                                                :override-redirect 0)
+                                 exwm--connection)))))
   (xcb:flush exwm--connection))
 
 (defun exwm-layout--hide (id)
@@ -93,46 +94,60 @@
   "Make window ID fullscreen."
   (interactive)
   (with-current-buffer (if id (exwm--id->buffer id) (window-buffer))
-    ;; Set the floating frame fullscreen first when the client is floating
-    (when exwm--floating-frame
-      (let* ((outer-id (frame-parameter exwm--floating-frame 'exwm-outer-id))
-             (geometry (xcb:+request-unchecked+reply exwm--connection
-                           (make-instance 'xcb:GetGeometry
-                                          :drawable outer-id))))
-        (setq exwm--floating-frame-geometry
-              (vector (slot-value geometry 'x) (slot-value geometry 'y)
-                      (slot-value geometry 'width)
-                      (slot-value geometry 'height)))
-        (xcb:+request exwm--connection
-            (make-instance 'xcb:ConfigureWindow
-                           :window outer-id
-                           :value-mask (logior xcb:ConfigWindow:X
-                                               xcb:ConfigWindow:Y
-                                               xcb:ConfigWindow:Width
-                                               xcb:ConfigWindow:Height)
-                           :x 0 :y 0
-                           :width (frame-pixel-width exwm-workspace--current)
-                           :height (frame-pixel-height
-                                    exwm-workspace--current))))
-      (xcb:flush exwm--connection))
-    (xcb:+request exwm--connection
-        (make-instance 'xcb:ConfigureWindow
-                       :window exwm--id
-                       :value-mask (logior xcb:ConfigWindow:X
-                                           xcb:ConfigWindow:Y
-                                           xcb:ConfigWindow:Width
-                                           xcb:ConfigWindow:Height)
-                       :x 0 :y 0
-                       :width (frame-pixel-width exwm-workspace--current)
-                       :height (frame-pixel-height exwm-workspace--current)))
-    (xcb:+request exwm--connection
-        (make-instance 'xcb:ewmh:set-_NET_WM_STATE
-                       :window exwm--id
-                       :data (vector xcb:Atom:_NET_WM_STATE_FULLSCREEN)))
-    (xcb:flush exwm--connection)
-    (cl-assert (not exwm--fullscreen))
-    (setq exwm--fullscreen t)
-    (exwm-input-release-keyboard)))
+    (let ((width (frame-pixel-width exwm-workspace--current))
+          (height (frame-pixel-height exwm-workspace--current)))
+      ;; Set the floating frame fullscreen first when the client is floating
+      (when exwm--floating-frame
+        (let* ((outer-id (frame-parameter exwm--floating-frame 'exwm-outer-id))
+               (geometry (xcb:+request-unchecked+reply exwm--connection
+                             (make-instance 'xcb:GetGeometry
+                                            :drawable outer-id)))
+               (setq exwm--floating-frame-geometry
+                     (vector (slot-value geometry 'x) (slot-value geometry 'y)
+                             (slot-value geometry 'width)
+                             (slot-value geometry 'height)))
+               (xcb:+request exwm--connection
+                   (make-instance 'xcb:ConfigureWindow
+                                  :window outer-id
+                                  :value-mask (logior xcb:ConfigWindow:X
+                                                      xcb:ConfigWindow:Y
+                                                      xcb:ConfigWindow:Width
+                                                      xcb:ConfigWindow:Height)
+                                  :x 0 :y 0
+                                  :width width
+                                  :height height)))
+          (xcb:flush exwm--connection)))
+      (xcb:+request exwm--connection
+          (make-instance 'xcb:ConfigureWindow
+                         :window exwm--id
+                         :value-mask (logior xcb:ConfigWindow:X
+                                             xcb:ConfigWindow:Y
+                                             xcb:ConfigWindow:Width
+                                             xcb:ConfigWindow:Height)
+                         :x 0 :y 0
+                         :width width
+                         :height height))
+      (xcb:+request exwm--connection
+          (make-instance 'xcb:SendEvent
+                         :propagate 0 :destination exwm--id
+                         :event-mask xcb:EventMask:StructureNotify
+                         :event (xcb:marshal
+                                 (make-instance 'xcb:ConfigureNotify
+                                                :event exwm--id :window exwm--id
+                                                :above-sibling xcb:Window:None
+                                                :x 0 :y 0
+                                                :width width :height height
+                                                :border-width 0
+                                                :override-redirect 0)
+                                 exwm--connection)))
+      (xcb:+request exwm--connection
+          (make-instance 'xcb:ewmh:set-_NET_WM_STATE
+                         :window exwm--id
+                         :data (vector xcb:Atom:_NET_WM_STATE_FULLSCREEN)))
+      (xcb:flush exwm--connection)
+      (cl-assert (not exwm--fullscreen))
+      (setq exwm--fullscreen t)
+      (exwm-input-release-keyboard))))
 
 (defun exwm-layout-unset-fullscreen (&optional id)
   "Restore window from fullscreen state."
@@ -152,12 +167,12 @@
                          :y (elt exwm--floating-frame-geometry 1)
                          :width (elt exwm--floating-frame-geometry 2)
                          :height (elt exwm--floating-frame-geometry 3))))
+    (cl-assert exwm--fullscreen)
+    (setq exwm--fullscreen nil)
     (exwm-layout--show exwm--id)
     (xcb:+request exwm--connection
         (make-instance 'xcb:ewmh:set-_NET_WM_STATE :window exwm--id :data []))
     (xcb:flush exwm--connection)
-    (cl-assert exwm--fullscreen)
-    (setq exwm--fullscreen nil)
     (exwm-input-grab-keyboard)))
 
 (defun exwm-layout--refresh ()
