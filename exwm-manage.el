@@ -340,6 +340,31 @@ corresponding buffer.")
       (exwm--log "DestroyNotify from #x%x" (slot-value obj 'window))
       (exwm-manage--unmanage-window (slot-value obj 'window)))))
 
+(defun exwm-manage--on-EnterNotify (data synthetic)
+  (unless synthetic
+    (let ((obj (make-instance 'xcb:EnterNotify)))
+      (xcb:unmarshal obj data)
+      (let ((id (oref obj event)))
+        (exwm--log "EnterNotify from #x%x" id)
+        (if (exwm--id->buffer id)
+            (exwm-input--set-focus id)
+          (xcb:+request exwm--connection
+              (make-instance 'xcb:SetInputFocus
+                             :revert-to xcb:InputFocus:PointerRoot :focus id
+                             :time xcb:Time:CurrentTime))
+          (xcb:+request exwm--connection
+              (make-instance 'xcb:ConfigureWindow
+                             :window id
+                             :value-mask xcb:ConfigWindow:StackMode
+                             :stack-mode xcb:StackMode:Above)))))))
+
+
+(defun exwm-manage--on-LeaveNotify (data synthetic)
+  (unless synthetic
+    (let ((obj (make-instance 'xcb:LeaveNotify)))
+      (xcb:unmarshal obj data)
+      (exwm--log "LeaveNotify from #x%x" (slot-value obj 'event)))))
+
 (defun exwm-manage--init ()
   "Initialize manage module."
   (xcb:+event exwm--connection 'xcb:ConfigureRequest
@@ -347,7 +372,12 @@ corresponding buffer.")
   (xcb:+event exwm--connection 'xcb:MapRequest 'exwm-manage--on-MapRequest)
   (xcb:+event exwm--connection 'xcb:UnmapNotify 'exwm-manage--on-UnmapNotify)
   (xcb:+event exwm--connection 'xcb:DestroyNotify
-              'exwm-manage--on-DestroyNotify))
+              'exwm-manage--on-DestroyNotify)
+  (xcb:+event exwm--connection 'xcb:EnterNotify
+              'exwm-manage--on-EnterNotify)
+  (xcb:+event exwm--connection 'xcb:LeaveNotify
+              'exwm-manage--on-LeaveNotify)
+  )
 
 
 
