@@ -155,11 +155,11 @@ The optional FORCE option is for internal use only."
         (xcb:flush exwm--connection)))))
 
 (defun exwm-workspace--on-focus-in ()
-  "Fix unexpected frame switch."
+  "Handle frame switch."
   (let ((index (exwm-workspace-index (selected-frame))))
     (exwm--log "Focus on workspace %s" index)
     (when (and index (/= index exwm-workspace-current-index))
-      (exwm--log "Workspace was switched unexpectedly")
+      (exwm--log "Workspace was switched")
       (exwm-workspace-switch index))))
 
 (defun exwm-workspace-move-window (index &optional id)
@@ -202,9 +202,11 @@ The optional FORCE option is for internal use only."
                              :window id
                              :parent (frame-parameter frame 'exwm-window-id)
                              :x 0 :y 0))
-          (xcb:flush exwm--connection)
-          (set-window-buffer (frame-first-window frame)
-                             (exwm--id->buffer id)))))
+          (when (frame-visible-p frame)
+            (exwm-layout--show id (frame-first-window frame))
+            (set-window-buffer (frame-first-window frame)
+                               (current-buffer)))
+          (xcb:flush exwm--connection))))
     (exwm-workspace--update-switch-history)))
 
 (defun exwm-workspace-rename-buffer (newname)
@@ -237,12 +239,11 @@ The optional FORCE option is for internal use only."
     (dolist (i exwm-workspace--list)
       (unless (frame-parameter i 'window-id)
         (setq exwm-workspace--list (delq i exwm-workspace--list)))))
-  (cl-assert (= 1 (length exwm-workspace--list)))
   (exwm--make-emacs-idle-for 0.1)      ;wait for the frame ready
   ;; Configure the existing frame
   (set-frame-parameter (car exwm-workspace--list) 'fullscreen 'fullboth)
   ;; Create remaining frames
-  (dotimes (i (1- exwm-workspace-number))
+  (while (< (length exwm-workspace--list) exwm-workspace-number)
     (nconc exwm-workspace--list
            (list (make-frame '((window-system . x) (fullscreen . fullboth))))))
   ;; Configure workspaces
@@ -265,7 +266,7 @@ The optional FORCE option is for internal use only."
                                                  xcb:EventMask:EnterWindow
                                                  xcb:EventMask:LeaveWindow)))))
   (xcb:flush exwm--connection)
-  ;; Handle unexpected frame switch
+  ;; Handle frame switch
   (add-hook 'focus-in-hook 'exwm-workspace--on-focus-in)
   ;; Switch to the first workspace
   (exwm-workspace-switch 0 t))
