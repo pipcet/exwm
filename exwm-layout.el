@@ -213,9 +213,10 @@
         (set-buffer-major-mode placeholder))
       (dolist (pair exwm--id-buffer-alist)
         (with-current-buffer (cdr pair)
-          ;; Exclude windows on other workspaces and floating frames
-          (when (and (eq frame exwm--frame) (not exwm--floating-frame))
-            (setq windows (get-buffer-window-list (current-buffer) 0))
+          ;; Exclude windows on invisible workspaces and floating frames
+          (when (and (frame-visible-p exwm--frame)
+                     (not exwm--floating-frame))
+            (setq windows (get-buffer-window-list (current-buffer) 0 'visible))
             (if (not windows)
                 (exwm-layout--hide exwm--id)
               (exwm-layout--show exwm--id (car windows))
@@ -225,7 +226,7 @@
       (dolist (window (window-list frame 0))
         (with-current-buffer (window-buffer window)
           (when (and (eq major-mode 'exwm-mode)
-                     (or exwm--floating-frame (not (eq frame exwm--frame))))
+                     (or exwm--floating-frame (not (frame-visible-p exwm--frame))))
             (set-window-buffer window placeholder)))))))
 
 (defun exwm-layout--on-minibuffer-setup ()
