@@ -105,7 +105,7 @@ It's updated in several occasions, and only used by `exwm-input--set-focus'.")
   "Run in focus-in-hook to remove redirected focus on frame."
   (let ((frame (selected-frame)))
     (when (and (frame-parameter frame 'exwm-window-id)
-               (not (memq frame exwm-workspace--list)))
+               (not (exwm-workspace-index frame)))
       (setq exwm-input--redirected t))))
 
 (defun exwm-input--update-focus ()

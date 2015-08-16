@@ -78,7 +78,7 @@
     (set-frame-parameter frame 'exwm-window-id frame-id)
     (set-frame-parameter frame 'exwm-outer-id outer-id)
     ;; Set urgency flag if it's not appear in the active workspace
-    (let ((idx (cl-position original-frame exwm-workspace--list)))
+    (let ((idx (exwm-workspace-index original-frame)))
       (when (/= idx exwm-workspace-current-index)
         (set-frame-parameter original-frame 'exwm--urgency t)
         (exwm-workspace--update-switch-history)))
