@@ -94,7 +94,8 @@
   "Make window ID fullscreen."
   (interactive)
   (with-current-buffer (if id (exwm--id->buffer id) (window-buffer))
-    (if exwm--fullscreen (user-error "Already in full-screen mode."))
+    (when exwm--fullscreen
+      (user-error "Already in full-screen mode."))
     (let ((width (frame-pixel-width exwm-workspace--current))
           (height (frame-pixel-height exwm-workspace--current)))
       ;; Set the floating frame fullscreen first when the client is floating
@@ -154,7 +155,8 @@
   "Restore window from fullscreen state."
   (interactive)
   (with-current-buffer (if id (exwm--id->buffer id) (window-buffer))
-    (if (not exwm--fullscreen) (user-error "Not in full-screen mode."))
+    (unless exwm--fullscreen
+      (user-error "Not in full-screen mode."))
     ;; Restore the floating frame if the client is floating
     (when exwm--floating-frame
       (xcb:+request exwm--connection
