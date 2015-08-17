@@ -122,7 +122,8 @@ The optional FORCE option is for internal use only."
       (let ((frame (elt exwm-workspace--list index)))
         (setq exwm-workspace--current frame
               exwm-workspace-current-index index)
-        (select-frame-set-input-focus frame)
+        (select-frame frame)
+        (exwm-input--set-focus (frame-parameter frame 'exwm-outer-id))
         ;; Move mouse when necessary
         (let ((position (mouse-pixel-position))
               x y w h)
