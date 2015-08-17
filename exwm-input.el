@@ -56,27 +56,21 @@ It's updated in several occasions, and only used by `exwm-input--set-focus'.")
 
 (defun exwm-input--set-focus (id)
   "Set input focus to window ID in a proper way."
-  (when (exwm--id->buffer id)
-    (with-current-buffer (exwm--id->buffer id)
-      (if (and (not exwm--hints-input)
-               (memq xcb:Atom:WM_TAKE_FOCUS exwm--protocols))
-          (progn
-            (exwm--log "Focus on #x%x with WM_TAKE_FOCUS" id)
-            (xcb:+request exwm--connection
-                (make-instance 'xcb:icccm:SendEvent
-                               :destination id
-                               :event (xcb:marshal
-                                       (make-instance 'xcb:icccm:WM_TAKE_FOCUS
-                                                      :window id
-                                                      :time
-                                                      exwm-input--timestamp)
-                                       exwm--connection))))
-        (exwm--log "Focus on #x%x with SetInputFocus" id)
-        (xcb:+request exwm--connection
-            (make-instance 'xcb:SetInputFocus
-                           :revert-to xcb:InputFocus:Parent :focus id
-                           :time xcb:Time:CurrentTime)))
-      (xcb:flush exwm--connection))))
+  (exwm--log "Focus on #x%x" id)
+  (xcb:+request exwm--connection
+      (make-instance 'xcb:icccm:SendEvent
+                     :destination id
+                     :event (xcb:marshal
+                             (make-instance 'xcb:icccm:WM_TAKE_FOCUS
+                                            :window id
+                                            :time
+                                            exwm-input--timestamp)
+                             exwm--connection)))
+  (xcb:+request exwm--connection
+      (make-instance 'xcb:SetInputFocus
+                     :revert-to xcb:InputFocus:Parent :focus id
+                     :time xcb:Time:CurrentTime))
+  (xcb:flush exwm--connection))
 
 (defvar exwm-input--focus-window nil "The (Emacs) window to be focused.")
 (defvar exwm-input--redirected nil

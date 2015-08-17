@@ -143,13 +143,27 @@ The optional FORCE option is for internal use only."
                            :window exwm--root :data index))
         (xcb:flush exwm--connection)))))
 
-(defun exwm-workspace--on-focus-in ()
-  "Handle frame switch."
-  (let ((index (exwm-workspace-index (selected-frame))))
-    (exwm--log "Focus on workspace %s" index)
-    (when (and index (/= index exwm-workspace-current-index))
-      (exwm--log "Workspace was switched")
-      (exwm-workspace-switch index))))
+
+;; (defvar exwm-workspace-last-seen-frame nil)
+
+;; (defun exwm-workspace--on-focus-in ()
+;;   "Handle frame switch."
+;;   (let ((index (exwm-workspace-index last-event-frame)))
+;;     (exwm--log "Focus on workspace %s" index)
+;;     (unless t
+;;       (unless (eq exwm-workspace-last-seen-frame last-event-frame)
+;;       (x-focus-frame last-event-frame)
+;;       (setq exwm-workspace-last-seen-frame last-event-frame))))
+;;   )
+
+  ;; (let ((index (exwm-workspace-index last-event-frame)))
+  ;;   (exwm--log "Focus on workspace %s" index)
+  ;;   (when (and index (/= index exwm-workspace-current-index))
+  ;;     (exwm--log "Workspace was switched %S %S"
+  ;;                (frame-parameter last-event-frame 'exwm-outer-id)
+  ;;                (frame-parameter last-event-frame 'exwm-window-id)
+  ;;                )
+  ;;     (exwm-workspace-switch index))))
 
 (defun exwm-workspace-move-window (index &optional id)
   "Move window ID to workspace INDEX."
@@ -257,8 +271,6 @@ The optional FORCE option is for internal use only."
                                                  xcb:EventMask:EnterWindow
                                                  xcb:EventMask:LeaveWindow)))))
   (xcb:flush exwm--connection)
-  ;; Handle frame switch
-  (add-hook 'focus-in-hook 'exwm-workspace--on-focus-in)
   ;; Switch to the first workspace
   (exwm-workspace-switch 0 t))
 
