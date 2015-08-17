@@ -189,7 +189,7 @@
 
 (defun exwm--make-emacs-idle-for (seconds)
   "Put Emacs in idle state for SECONDS seconds."
-  (with-timeout (seconds) (read-event)))
+  (sleep-for seconds))
 
 (defun exwm-reset ()
   "Reset window to standard state: non-fullscreen, line-mode."
