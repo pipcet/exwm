@@ -145,7 +145,7 @@
 (require 'exwm-manage)
 (require 'exwm-input)
 
-(defvar exwm-debug-on nil "Non-nil to turn on debug for EXWM.")
+(defvar exwm-debug-on t "Non-nil to turn on debug for EXWM.")
 
 (defmacro exwm--log (format-string &rest args)
   "Print debug message."
