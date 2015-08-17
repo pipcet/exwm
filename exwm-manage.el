@@ -262,7 +262,7 @@ corresponding buffer.")
   (unless id (setq id (exwm--buffer->id (current-buffer))))
   (let* ((response (xcb:+request-unchecked+reply exwm--connection
                        (make-instance 'xcb:ewmh:get-_NET_WM_PID :window id)))
-         (pid (and response (oref response value))))
+         (pid (and response (slot-value response 'value))))
     (if pid
         (signal-process pid 'SIGKILL)
       (xcb:+request exwm--connection
