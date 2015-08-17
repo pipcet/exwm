@@ -345,6 +345,7 @@ corresponding buffer.")
       (xcb:unmarshal obj data)
       (let ((id (oref obj event)))
         (exwm--log "EnterNotify from #x%x" id)
+        (exwm-input--set-focus id)
         (if (exwm--id->buffer id)
             (exwm-input--set-focus id)
           (xcb:+request exwm--connection
