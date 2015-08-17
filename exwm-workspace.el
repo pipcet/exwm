@@ -124,18 +124,6 @@ The optional FORCE option is for internal use only."
               exwm-workspace-current-index index)
         (select-frame frame)
         (exwm-input--set-focus (frame-parameter frame 'exwm-outer-id))
-        ;; Move mouse when necessary
-        (let ((position (mouse-pixel-position))
-              x y w h)
-          (unless (eq frame (car position))
-            (setq x (cadr position)
-                  y (cddr position)
-                  w (frame-pixel-width frame)
-                  h (frame-pixel-height frame))
-            (when (or (> x w) (> y h))
-              (setq x (/ w 2)
-                    y (/ h 2)))
-            (set-mouse-pixel-position frame x y)))
         (setq default-minibuffer-frame frame)
         ;; Hide windows in other workspaces by preprending a space
         (dolist (i exwm--id-buffer-alist)
