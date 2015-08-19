@@ -183,9 +183,10 @@
     (select-window window))
   (run-hooks 'exwm-floating-setup-hook))
 
-(defun exwm-floating--unset-floating (id)
-  "Make window ID non-floating."
+(defun exwm-floating--unset-floating (id &optional frame)
+  "Make window ID non-floating and part of workspace FRAME."
   (interactive)
+  (unless frame (setq frame exwm-workspace--current))
   (let ((buffer (exwm--id->buffer id)))
     ;; Reparent to workspace frame
     (xcb:+request exwm--connection
@@ -195,7 +196,7 @@
     (xcb:+request exwm--connection
         (make-instance 'xcb:ReparentWindow
                        :window id
-                       :parent (frame-parameter exwm-workspace--current
+                       :parent (frame-parameter frame
                                                 'exwm-window-id)
                        :x 0 :y 0))      ;temporary position
     (xcb:+request exwm--connection
@@ -211,8 +212,8 @@
     (with-current-buffer buffer
       (setq window-size-fixed nil
             exwm--floating-frame nil
-            exwm--frame exwm-workspace--current))
-    (let ((window (frame-selected-window exwm-workspace--current)))
+            exwm--frame frame))
+    (let ((window (frame-selected-window frame)))
       (set-window-buffer window buffer)
       (select-window window)))
   (run-hooks 'exwm-floating-exit-hook))
