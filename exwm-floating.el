@@ -77,11 +77,6 @@
     ;; Save window IDs
     (set-frame-parameter frame 'exwm-window-id frame-id)
     (set-frame-parameter frame 'exwm-outer-id outer-id)
-    ;; Set urgency flag if it's not appear in the active workspace
-    (let ((idx (exwm-workspace-index original-frame)))
-      (when (/= idx exwm-workspace-current-index)
-        (set-frame-parameter original-frame 'exwm--urgency t)
-        (exwm-workspace--update-switch-history)))
     ;; Fix illegal parameters
     ;; FIXME: check normal hints restrictions
     (let* ((display-width (frame-pixel-width original-frame))
