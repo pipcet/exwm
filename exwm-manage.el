@@ -64,7 +64,7 @@ corresponding buffer.")
       (exwm--update-class id)
       (exwm-manage--update-geometry id)
       ;; No need to manage (please check OverrideRedirect outside)
-      (when (or
+      (when nil (or
              (not
               (or (not exwm-window-type)
                   (memq xcb:Atom:_NET_WM_WINDOW_TYPE_UTILITY exwm-window-type)
@@ -135,9 +135,10 @@ corresponding buffer.")
       (exwm--update-hints id)
       (exwm--update-protocols id)
       (exwm--update-state id)
-      (if (or exwm-transient-for exwm--fixed-size
-              (memq xcb:Atom:_NET_WM_WINDOW_TYPE_UTILITY exwm-window-type)
-              (memq xcb:Atom:_NET_WM_WINDOW_TYPE_DIALOG exwm-window-type))
+      (if (and nil
+               (or exwm-transient-for exwm--fixed-size
+                   (memq xcb:Atom:_NET_WM_WINDOW_TYPE_UTILITY exwm-window-type)
+                   (memq xcb:Atom:_NET_WM_WINDOW_TYPE_DIALOG exwm-window-type)))
           (exwm-floating--set-floating id)
         (exwm-floating--unset-floating id))
       (exwm-input-grab-keyboard id)
