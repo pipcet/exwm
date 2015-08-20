@@ -165,7 +165,7 @@
   (cdr (assoc id exwm--id-buffer-alist)))
 
 (defsubst exwm--buffer->id (buffer)
-  "Emacs buffer => X window ID."
+  "Emacs buffer BUFFER => X window ID."
   (car (rassoc buffer exwm--id-buffer-alist)))
 
 (defun exwm--lock (&rest args)          ;args are for abnormal hook
