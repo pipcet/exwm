@@ -58,18 +58,15 @@ It's updated in several occasions, and only used by `exwm-input--set-focus'.")
   "Set input focus to window ID in a proper way."
   (exwm--log "Focus on #x%x" id)
   (xcb:+request exwm--connection
-      (make-instance 'xcb:icccm:SendEvent
-                     :destination id
-                     :event (xcb:marshal
-                             (make-instance 'xcb:icccm:WM_TAKE_FOCUS
-                                            :window id
-                                            :time
-                                            exwm-input--timestamp)
-                             exwm--connection)))
-  (xcb:+request exwm--connection
       (make-instance 'xcb:SetInputFocus
                      :revert-to xcb:InputFocus:Parent :focus id
                      :time xcb:Time:CurrentTime))
+  (if (exwm--id->buffer id)
+    (xcb:+request exwm--connection
+        (make-instance 'xcb:ConfigureWindow
+                       :window id
+                       :value-mask xcb:ConfigWindow:StackMode
+                       :stack-mode xcb:StackMode:Above)))
   (xcb:flush exwm--connection))
 
 (defvar exwm-input--focus-window nil "The (Emacs) window to be focused.")
