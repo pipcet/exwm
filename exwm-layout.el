@@ -33,8 +33,7 @@
          (frame (and window (window-frame window))))
     (cl-assert buffer)
     (with-current-buffer buffer
-      (unless (and (eq frame exwm-current--frame)
-                   (not (frame-parameter frame 'exwm-resized)))
+      (unless (eq frame exwm--current-frame)
         (when window
           (xcb:+request exwm--connection (make-instance 'xcb:MapWindow :window id))
           (xcb:+request exwm--connection
@@ -109,9 +108,9 @@
                                                       :border-width 0
                                                       :override-redirect 0)
                                        exwm--connection)))))
-        (when exwm-current--frame
+        (when exwm--current-frame
           (exwm--log "Hide #x%x" id)
-          (xcb:+request exwm--connection (make-instance 'xcb:UnmapWindow :window (frame-parameter exwm-current--frame 'exwm-inner-id)))
+          (xcb:+request exwm--connection (make-instance 'xcb:UnmapWindow :window (frame-parameter exwm--current-frame 'exwm-inner-id)))
           (when (not window)
             (xcb:+request exwm--connection
                 (make-instance 'xcb:ChangeWindowAttributes
@@ -127,7 +126,7 @@
                                :window id
                                :state xcb:icccm:WM_STATE:IconicState
                                :icon xcb:Window:None))))
-        (setq exwm-current--frame frame))))
+        (setq exwm--current-frame frame))))
   (xcb:flush exwm--connection))
 
 (defun exwm-layout-set-fullscreen (&optional id)
@@ -263,6 +262,11 @@
                            (exwm-layout--refresh))))
 
 (defun exwm-layout--on-window-size-change (frame)
+  (dolist (pair exwm--id-buffer-alist)
+    (when (cdr pair)
+      (with-current-buffer (cdr pair)
+        (when (eq exwm--current-frame frame)
+          (setq exwm--current-frame nil)))))
   (exwm-layout--refresh)
   (exwm-layout--refresh frame)
   (dolist (f exwm-workspace--list)
@@ -307,8 +311,8 @@
   (add-to-list 'window-size-change-functions 'exwm-layout--on-window-size-change)
   ;;(add-to-list 'window-text-change-functions 'exwm-layout--on-window-text-change)
   (add-hook 'echo-area-clear-hook 'exwm-layout--on-echo-area-clear)
-  ;;(add-hook 'focus-out-hook 'exwm-layout--on-focus-out)
-  ;;(add-hook 'focus-in-hook 'exwm-layout--on-focus-out)
+  (add-hook 'focus-out-hook 'exwm-layout--on-focus-out)
+  (add-hook 'focus-in-hook 'exwm-layout--on-focus-out)
   )
 
 

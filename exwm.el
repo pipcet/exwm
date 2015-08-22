@@ -637,7 +637,7 @@
   ;; Internal variables
   (make-local-variable 'exwm--id)              ;window id
   (set (make-local-variable 'exwm--frame) nil) ;workspace frame
-  (set (make-local-variable 'exwm-current--frame) nil) ;workspace frame
+  (set (make-local-variable 'exwm--current-frame) nil) ;workspace frame
   (set (make-local-variable 'exwm--floating-frame) nil) ;floating frame
   (set (make-local-variable 'exwm--floating-edges) nil) ;four edges
   (set (make-local-variable 'exwm--fullscreen) nil) ;used in fullscreen
