@@ -125,13 +125,6 @@ The optional FORCE option is for internal use only."
         (select-frame frame)
         (exwm-input--set-focus (frame-parameter frame 'exwm-outer-id))
         (setq default-minibuffer-frame frame)
-        ;; Hide windows in other workspaces by preprending a space
-        (dolist (i exwm--id-buffer-alist)
-          (with-current-buffer (cdr i)
-            (let ((name (replace-regexp-in-string "^\\s-*" "" (buffer-name))))
-              (exwm-workspace-rename-buffer (if (eq frame exwm--frame)
-                                                name
-                                              (concat " " name))))))
         ;; Update demands attention flag
         (set-frame-parameter frame 'exwm--urgency nil)
         ;; Update switch workspace history
