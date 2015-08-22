@@ -68,53 +68,53 @@ corresponding buffer.")
       (exwm-manage--update-geometry id)
       ;; No need to manage (please check OverrideRedirect outside)
       (when nil (or
-             (not
-              (or (not exwm-window-type)
-                  (memq xcb:Atom:_NET_WM_WINDOW_TYPE_UTILITY exwm-window-type)
-                  (memq xcb:Atom:_NET_WM_WINDOW_TYPE_DIALOG exwm-window-type)
-                  (memq xcb:Atom:_NET_WM_WINDOW_TYPE_NORMAL exwm-window-type)))
-             ;; For Java applications
-             (and (memq xcb:Atom:_NET_WM_WINDOW_TYPE_NORMAL exwm-window-type)
-                  exwm-instance-name
-                  (string-prefix-p "sun-awt-X11-" exwm-instance-name)
-                  (not (string-suffix-p "XFramePeer" exwm-instance-name))))
-        (exwm--log "No need to manage #x%x" id)
-        ;; Remove all events
-        (xcb:+request-checked+request-check exwm--connection
-            (make-instance 'xcb:ChangeWindowAttributes
-                           :window id :value-mask xcb:CW:EventMask
-                           :event-mask xcb:EventMask:NoEvent))
-        ;; The window needs to be mapped
-        (xcb:+request exwm--connection
-            (make-instance xcb:MapWindow :window id))
-        (with-slots (x y width height) exwm--geometry
-          ;; Reparent to virtual root (essential)
-          (xcb:+request exwm--connection
-              (make-instance 'xcb:ReparentWindow
-                             :window id
-                             :parent (frame-parameter exwm-workspace--current
-                                                      'exwm-window-id)
-                             :x x :y y))
-          ;; Center window of type _NET_WM_WINDOW_TYPE_SPLASH
-          (when (memq xcb:Atom:_NET_WM_WINDOW_TYPE_SPLASH exwm-window-type)
+                 (not
+                  (or (not exwm-window-type)
+                      (memq xcb:Atom:_NET_WM_WINDOW_TYPE_UTILITY exwm-window-type)
+                      (memq xcb:Atom:_NET_WM_WINDOW_TYPE_DIALOG exwm-window-type)
+                      (memq xcb:Atom:_NET_WM_WINDOW_TYPE_NORMAL exwm-window-type)))
+                 ;; For Java applications
+                 (and (memq xcb:Atom:_NET_WM_WINDOW_TYPE_NORMAL exwm-window-type)
+                      exwm-instance-name
+                      (string-prefix-p "sun-awt-X11-" exwm-instance-name)
+                      (not (string-suffix-p "XFramePeer" exwm-instance-name))))
+            (exwm--log "No need to manage #x%x" id)
+            ;; Remove all events
+            (xcb:+request-checked+request-check exwm--connection
+                (make-instance 'xcb:ChangeWindowAttributes
+                               :window id :value-mask xcb:CW:EventMask
+                               :event-mask xcb:EventMask:NoEvent))
+            ;; The window needs to be mapped
             (xcb:+request exwm--connection
-                (make-instance 'xcb:ConfigureWindow
-                               :window id
-                               :value-mask (logior xcb:ConfigWindow:X
-                                                   xcb:ConfigWindow:Y)
-                               :x (/ (- (frame-pixel-width
-                                         exwm-workspace--current)
-                                        width)
-                                     2)
-                               :y (/ (- (frame-pixel-height
-                                         exwm-workspace--current)
-                                        height)
-                                     2)))))
-        (xcb:flush exwm--connection)
-        (setq kill-buffer-query-functions nil)
-        (setq exwm--id-buffer-alist (assq-delete-all id exwm--id-buffer-alist))
-        (kill-buffer (current-buffer))
-        (throw 'return 'ignored))
+                (make-instance xcb:MapWindow :window id))
+            (with-slots (x y width height) exwm--geometry
+              ;; Reparent to virtual root (essential)
+              (xcb:+request exwm--connection
+                  (make-instance 'xcb:ReparentWindow
+                                 :window id
+                                 :parent (frame-parameter exwm-workspace--current
+                                                          'exwm-inner-id)
+                                 :x x :y y))
+              ;; Center window of type _NET_WM_WINDOW_TYPE_SPLASH
+              (when (memq xcb:Atom:_NET_WM_WINDOW_TYPE_SPLASH exwm-window-type)
+                (xcb:+request exwm--connection
+                    (make-instance 'xcb:ConfigureWindow
+                                   :window id
+                                   :value-mask (logior xcb:ConfigWindow:X
+                                                       xcb:ConfigWindow:Y)
+                                   :x (/ (- (frame-pixel-width
+                                             exwm-workspace--current)
+                                            width)
+                                         2)
+                                   :y (/ (- (frame-pixel-height
+                                             exwm-workspace--current)
+                                            height)
+                                         2)))))
+            (xcb:flush exwm--connection)
+            (setq kill-buffer-query-functions nil)
+            (setq exwm--id-buffer-alist (assq-delete-all id exwm--id-buffer-alist))
+            (kill-buffer (current-buffer))
+            (throw 'return 'ignored))
       ;; Manage the window
       (exwm--log "Manage #x%x" id)
       (xcb:+request exwm--connection    ;remove border
@@ -279,46 +279,53 @@ corresponding buffer.")
   (let ((obj (make-instance 'xcb:ConfigureRequest))
         buffer edges)
     (xcb:unmarshal obj data)
-    (with-slots (stack-mode window sibling x y width height border-width
+    (with-slots (stack-mode (id window) sibling x y width height border-width
                             value-mask)
         obj
-      (exwm--log "ConfigureRequest from #x%x (#x%x) @%dx%d%+d%+d, border: %d"
-                 value-mask window width height x y border-width)
-      (if (setq buffer (exwm--id->buffer window))
-          ;; Send client message for managed windows
-          (with-current-buffer buffer
-            (setq edges
-                  (if exwm--fullscreen
-                      (list 0 0
-                            (frame-pixel-width exwm-workspace--current)
-                            (frame-pixel-height exwm-workspace--current))
-                    (or exwm--floating-edges
-                        (window-inside-absolute-pixel-edges
-                         (get-buffer-window)))))
-            (exwm--log "Reply with ConfigureNotify (edges): %s" edges)
+      (let ((wa (xcb:+request-unchecked+reply exwm--connection
+                    (make-instance 'xcb:GetWindowAttributes
+                                   :window id))))
+        (exwm--log "ConfigureRequest from #x%x (#x%x) @%dx%d%+d%+d, border: %d: %S %S"
+                   value-mask id width height x y border-width obj wa)
+        (if (and (= width 32000) (= height 32000))
+            (exwm-manage--manage-window id t)
+          (exwm-manage--manage-window id)
+          (redisplay)
+          (if (setq buffer (exwm--id->buffer id))
+              ;; Send client message for managed windows
+              (with-current-buffer buffer
+                (setq edges
+                      (if exwm--fullscreen
+                          (list 0 0
+                                (frame-pixel-width exwm-workspace--current)
+                                (frame-pixel-height exwm-workspace--current))
+                        (or exwm--floating-edges
+                            (window-inside-absolute-pixel-edges
+                             (get-buffer-window)))))
+                (exwm--log "Reply with ConfigureNotify (edges): %s" edges)
+                (xcb:+request exwm--connection
+                    (make-instance 'xcb:SendEvent
+                                   :propagate 0 :destination id
+                                   :event-mask xcb:EventMask:StructureNotify
+                                   :event (xcb:marshal
+                                           (make-instance
+                                            'xcb:ConfigureNotify
+                                            :event id :window id
+                                            :above-sibling xcb:Window:None
+                                            :x (elt edges 0) :y (elt edges 1)
+                                            :width (- (elt edges 2) (elt edges 0))
+                                            :height (- (elt edges 3) (elt edges 1))
+                                            :border-width 0 :override-redirect 0)
+                                           exwm--connection))))
+            (exwm--log "ConfigureWindow (preserve geometry)")
+            ;; Configure unmanaged windows
             (xcb:+request exwm--connection
-                (make-instance 'xcb:SendEvent
-                               :propagate 0 :destination window
-                               :event-mask xcb:EventMask:StructureNotify
-                               :event (xcb:marshal
-                                       (make-instance
-                                        'xcb:ConfigureNotify
-                                        :event window :window window
-                                        :above-sibling xcb:Window:None
-                                        :x (elt edges 0) :y (elt edges 1)
-                                        :width (- (elt edges 2) (elt edges 0))
-                                        :height (- (elt edges 3) (elt edges 1))
-                                        :border-width 0 :override-redirect 0)
-                                       exwm--connection))))
-        (exwm--log "ConfigureWindow (preserve geometry)")
-        ;; Configure unmanaged windows
-        (xcb:+request exwm--connection
-            (make-instance 'xcb:ConfigureWindow
-                           :window window
-                           :value-mask value-mask
-                           :x x :y y :width width :height height
-                           :border-width border-width
-                           :sibling sibling :stack-mode stack-mode)))))
+                (make-instance 'xcb:ConfigureWindow
+                               :window id
+                               :value-mask value-mask
+                               :x x :y y :width width :height height
+                               :border-width border-width
+                               :sibling sibling :stack-mode stack-mode)))))))
   (xcb:flush exwm--connection))
 
 (defun exwm-manage--on-MapRequest (data synthetic)
