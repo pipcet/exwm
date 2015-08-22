@@ -150,6 +150,7 @@ corresponding buffer.")
   "Unmanage window ID."
   (let ((buffer (exwm--id->buffer id)))
     (exwm--log "Unmanage #x%x (buffer: %s)" id buffer)
+    (exwm-layout--hide id)
     (setq exwm--id-buffer-alist (assq-delete-all id exwm--id-buffer-alist))
     (when (buffer-live-p buffer)
       (with-current-buffer buffer
