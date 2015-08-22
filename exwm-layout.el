@@ -254,17 +254,58 @@
   "Refresh layout when minibuffer grows."
   (run-with-idle-timer 0.01 nil         ;FIXME
                        (lambda ()
-                         (when (and (< 1 (window-height (minibuffer-window)))
-                                    (not (and (eq major-mode 'exwm-mode)
-                                              exwm--floating-frame)))
-                           (exwm-layout--refresh)))))
+                         (unless (and (eq major-mode 'exwm-mode)
+                                         exwm--floating-frame))
+                           (exwm-layout--refresh))))
+
+(defun exwm-layout--on-window-size-change (frame)
+  (exwm-layout--refresh)
+  (exwm-layout--refresh frame)
+  (dolist (f exwm-workspace--list)
+    (exwm-layout--refresh f))
+  (run-with-idle-timer .01 nil
+                       `(lambda ()
+                          (dolist (f exwm-workspace--list)
+                            (exwm-layout--refresh f))
+                          (exwm-layout--refresh)
+                          (exwm-layout--refresh ,frame))))
+
+(defun exwm-layout--on-focus-out ()
+  (exwm-layout--refresh)
+  (dolist (f exwm-workspace--list)
+    (exwm-layout--refresh f))
+  (run-with-idle-timer 1.0 nil
+                       `(lambda ()
+                          (dolist (f exwm-workspace--list)
+                            (exwm-layout--refresh f))
+                          (exwm-layout--refresh))))
+
+(defun exwm-layout--on-window-text-change ()
+  (exwm-layout--refresh))
+
+(defun exwm-layout--on-echo-area-clear ()
+  (exwm-layout--refresh)
+  (dolist (f exwm-workspace--list)
+    (exwm-layout--refresh f))
+  (run-with-idle-timer .01 nil
+                       `(lambda ()
+                          (dolist (f exwm-workspace--list)
+                            (exwm-layout--refresh f))
+                          (exwm-layout--refresh))))
 
 (defun exwm-layout--init ()
   "Initialize layout module."
   ;; Auto refresh layout
   (add-hook 'window-configuration-change-hook 'exwm-layout--refresh)
   ;; Refresh when minibuffer grows
-  (add-hook 'minibuffer-setup-hook 'exwm-layout--on-minibuffer-setup t))
+  (add-hook 'minibuffer-setup-hook 'exwm-layout--on-minibuffer-setup t)
+  ;; Refresh upon window size change
+  (add-to-list 'window-size-change-functions 'exwm-layout--on-window-size-change)
+  ;;(add-to-list 'window-text-change-functions 'exwm-layout--on-window-text-change)
+  (add-hook 'echo-area-clear-hook 'exwm-layout--on-echo-area-clear)
+  ;;(add-hook 'focus-out-hook 'exwm-layout--on-focus-out)
+  ;;(add-hook 'focus-in-hook 'exwm-layout--on-focus-out)
+  )
 
 
 
