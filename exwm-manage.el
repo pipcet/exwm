@@ -341,7 +341,8 @@ corresponding buffer.")
     (let ((obj (make-instance 'xcb:UnmapNotify)))
       (xcb:unmarshal obj data)
       (exwm--log "UnmapNotify from #x%x" (slot-value obj 'window))
-      (exwm-manage--unmanage-window (slot-value obj 'window) t))))
+      ;;(exwm-manage--unmanage-window (slot-value obj 'window) t)
+      )))
 
 (defun exwm-manage--on-DestroyNotify (data synthetic)
   "Handle DestroyNotify event."
