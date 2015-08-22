@@ -356,7 +356,7 @@ corresponding buffer.")
   (unless synthetic
     (let ((obj (make-instance 'xcb:EnterNotify)))
       (xcb:unmarshal obj data)
-      (let ((id (oref obj event)))
+      (let ((id (slot-value obj 'event)))
         (exwm--log "EnterNotify from #x%x" id)
         (exwm-input--set-focus id)
         (if (exwm--id->buffer id)
