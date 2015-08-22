@@ -190,7 +190,7 @@ The optional FORCE option is for internal use only."
               (xcb:flush exwm--connection))
           ;; Move the window itself
           (bury-buffer)
-          (exwm-layout--hide id)
+          (exwm-layout--show id nil)
           (xcb:+request exwm--connection
               (make-instance 'xcb:ReparentWindow
                              :window id
@@ -248,7 +248,7 @@ The optional FORCE option is for internal use only."
       (xcb:+request exwm--connection
           (make-instance 'xcb:CreateWindow
                          :parent window-id :depth 0 :wid inner-id
-                         :x 0 :y 0 :width 100 :height 100
+                         :x -1 :y -1 :width 1 :height 1
                          :border-width 0 :class 0 :visual 0 :value-mask 0
                          ))
 
@@ -267,8 +267,7 @@ The optional FORCE option is for internal use only."
       (xcb:+request exwm--connection
           (make-instance 'xcb:ChangeWindowAttributes
                          :window window-id :value-mask xcb:CW:EventMask
-                             :event-mask (logior xcb:EventMask:SubstructureRedirect
-                                                 xcb:EventMask:EnterWindow
+                             :event-mask (logior xcb:EventMask:EnterWindow
                                                  xcb:EventMask:LeaveWindow)))
       (xcb:+request exwm--connection
           (make-instance 'xcb:ChangeWindowAttributes

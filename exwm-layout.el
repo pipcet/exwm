@@ -26,104 +26,109 @@
 
 ;;; Code:
 
-(defun exwm-layout--show (id &optional window)
+(defun exwm-layout--show (id window)
   "Show window ID exactly fit in the Emacs window WINDOW."
   (exwm--log "Show #x%x in %s" id window)
-  (xcb:+request exwm--connection (make-instance 'xcb:MapWindow :window id))
-  (xcb:+request exwm--connection
-      (make-instance 'xcb:icccm:set-WM_STATE
-                     :window id :state xcb:icccm:WM_STATE:NormalState
-                     :icon xcb:Window:None))
   (let* ((buffer (exwm--id->buffer id))
-         (frame (window-frame window))
-         (edges-rel-frame (or (and buffer
-                         (with-current-buffer buffer exwm--floating-edges))
-                              (window-inside-pixel-edges window)))
-         (x-offset (frame-parameter frame 'left))
-         (y-offset (frame-parameter frame 'top))
-         (x-rel-frame (elt edges-rel-frame 0))
-         (y-rel-frame (elt edges-rel-frame 1))
-         (x-absolute (+ x-rel-frame x-offset))
-         (y-absolute (+ y-rel-frame y-offset))
-         (width (- (elt edges-rel-frame 2) (elt edges-rel-frame 0)))
-         (height (- (elt edges-rel-frame 3) (elt edges-rel-frame 1))))
-    (when (and buffer (with-current-buffer buffer exwm--fullscreen))
-      (setq x-rel-frame 0
-            y-rel-frame 0
-            width (frame-pixel-width frame)
-            height (frame-pixel-height frame)))
-    (exwm--log "Show #x%x in %s at %s" id window edges-rel-frame)
-    (when buffer
-      (with-current-buffer buffer
-        (unless (equal frame exwm--frame)
-          (xcb:+request-checked+request-check exwm--connection
-              (make-instance 'xcb:ReparentWindow
-                             :window id
-                             :parent (frame-parameter frame 'exwm-inner-id)
-                             :x x-rel-frame :y y-rel-frame))
-          (setq exwm--frame frame))
-        (xcb:+request exwm--connection
-            (make-instance 'xcb:ConfigureWindow
-                           :window (frame-parameter frame 'exwm-inner-id)
-                           :value-mask (logior xcb:ConfigWindow:X
-                                               xcb:ConfigWindow:Y
-                                               xcb:ConfigWindow:Width
-                                               xcb:ConfigWindow:Height
-                                               xcb:ConfigWindow:StackMode)
-                           :x x-rel-frame :y y-rel-frame :width width :height height
-                           ;; In order to put non-floating window at bottom
-                           :stack-mode xcb:StackMode:Above))
-        (xcb:+request exwm--connection
-            (make-instance 'xcb:MapWindow
-                           :window (frame-parameter frame 'exwm-inner-id)))))
-    (xcb:+request exwm--connection
-        (make-instance 'xcb:ConfigureWindow
-                       :window id
-                       :value-mask (logior xcb:ConfigWindow:X
-                                           xcb:ConfigWindow:Y
-                                           xcb:ConfigWindow:Width
-                                           xcb:ConfigWindow:Height
-                                           xcb:ConfigWindow:StackMode)
-                       :x x-rel-frame :y y-rel-frame :width width :height height
-                       ;; In order to put non-floating window at bottom
-                       :stack-mode xcb:StackMode:Above))
-    (xcb:+request exwm--connection
-        (make-instance 'xcb:SendEvent
-                       :propagate 0 :destination id
-                       :event-mask xcb:EventMask:StructureNotify
-                       :event (xcb:marshal
-                               (make-instance 'xcb:ConfigureNotify
-                                              :event id :window id
-                                              :above-sibling xcb:Window:None
-                                              :x x-absolute :y y-absolute
-                                              :width width :height height
-                                              :border-width 0
-                                              :override-redirect 0)
-                               exwm--connection))))
+         (frame (and window (window-frame window))))
+    (cl-assert buffer)
+    (with-current-buffer buffer
+      (unless (and (eq frame exwm-current--frame)
+                   (not (frame-parameter frame 'exwm-resized)))
+        (when window
+          (xcb:+request exwm--connection (make-instance 'xcb:MapWindow :window id))
+          (xcb:+request exwm--connection
+              (make-instance 'xcb:icccm:set-WM_STATE
+                             :window id :state xcb:icccm:WM_STATE:NormalState
+                             :icon xcb:Window:None))
+          (let* ((edges-rel-frame (or (and buffer
+                                           (with-current-buffer buffer exwm--floating-edges))
+                                      (window-inside-pixel-edges window)))
+                 (x-offset (frame-parameter frame 'left))
+                 (y-offset (frame-parameter frame 'top))
+                 (x-rel-frame (elt edges-rel-frame 0))
+                 (y-rel-frame (elt edges-rel-frame 1))
+                 (x-absolute (+ x-rel-frame x-offset))
+                 (y-absolute (+ y-rel-frame y-offset))
+                 (width (- (elt edges-rel-frame 2) (elt edges-rel-frame 0)))
+                 (height (- (elt edges-rel-frame 3) (elt edges-rel-frame 1))))
+            (when (and buffer (with-current-buffer buffer exwm--fullscreen))
+              (setq x-rel-frame 0
+                    y-rel-frame 0
+                    width (frame-pixel-width frame)
+                    height (frame-pixel-height frame)))
+            (exwm--log "Show #x%x in %s at %s" id window edges-rel-frame)
+            (when buffer
+              (with-current-buffer buffer
+                (xcb:+request exwm--connection
+                    (make-instance 'xcb:MapWindow
+                                   :window (frame-parameter frame 'exwm-inner-id)))
+                (xcb:flush exwm--connection)
+                (message "reparent %S to %S %S" id (frame-parameter frame 'exwm-inner-id)
+                         (xcb:+request-checked+request-check exwm--connection
+                    (make-instance 'xcb:ReparentWindow
+                                   :window id
+                                   :parent (frame-parameter frame 'exwm-inner-id)
+                                   :x 0 :y 0)))
+                (xcb:flush exwm--connection)
+                (xcb:+request exwm--connection
+                    (make-instance 'xcb:ConfigureWindow
+                                   :window (frame-parameter frame 'exwm-inner-id)
+                                   :value-mask (logior xcb:ConfigWindow:X
+                                                       xcb:ConfigWindow:Y
+                                                       xcb:ConfigWindow:Width
+                                                       xcb:ConfigWindow:Height
+                                                       xcb:ConfigWindow:StackMode)
+                                   :x x-rel-frame :y y-rel-frame :width width :height height
+                                   ;; In order to put non-floating window at bottom
+                                   :stack-mode xcb:StackMode:Above))
+                (xcb:+request exwm--connection
+                    (make-instance 'xcb:MapWindow
+                                   :window (frame-parameter frame 'exwm-inner-id)))))
+            (xcb:+request exwm--connection
+                (make-instance 'xcb:ConfigureWindow
+                               :window id
+                               :value-mask (logior xcb:ConfigWindow:X
+                                                   xcb:ConfigWindow:Y
+                                                   xcb:ConfigWindow:Width
+                                                   xcb:ConfigWindow:Height
+                                                   xcb:ConfigWindow:StackMode)
+                               :x 0 :y 0 :width width :height height
+                               ;; In order to put non-floating window at bottom
+                               :stack-mode xcb:StackMode:Above))
+            (xcb:+request exwm--connection
+                (make-instance 'xcb:SendEvent
+                               :propagate 0 :destination id
+                               :event-mask xcb:EventMask:StructureNotify
+                               :event (xcb:marshal
+                                       (make-instance 'xcb:ConfigureNotify
+                                                      :event id :window id
+                                                      :above-sibling xcb:Window:None
+                                                      :x x-absolute :y y-absolute
+                                                      :width width :height height
+                                                      :border-width 0
+                                                      :override-redirect 0)
+                                       exwm--connection)))))
+        (when exwm-current--frame
+          (exwm--log "Hide #x%x" id)
+          (xcb:+request exwm--connection (make-instance 'xcb:UnmapWindow :window (frame-parameter exwm-current--frame 'exwm-inner-id)))
+          (when (not window)
+            (xcb:+request exwm--connection
+                (make-instance 'xcb:ChangeWindowAttributes
+                               :window id :value-mask xcb:CW:EventMask
+                               :event-mask xcb:EventMask:NoEvent))
+            (xcb:+request exwm--connection (make-instance 'xcb:UnmapWindow :window id))
+            (xcb:+request exwm--connection
+                (make-instance 'xcb:ChangeWindowAttributes
+                               :window id :value-mask xcb:CW:EventMask
+                               :event-mask exwm--client-event-mask))
+            (xcb:+request exwm--connection
+                (make-instance 'xcb:icccm:set-WM_STATE
+                               :window id
+                               :state xcb:icccm:WM_STATE:IconicState
+                               :icon xcb:Window:None))))
+        (setq exwm-current--frame frame))))
   (xcb:flush exwm--connection))
-
-(defun exwm-layout--hide (id)
-  "Hide window ID."
-  (with-current-buffer (exwm--id->buffer id)
-    (unless (eq xcb:icccm:WM_STATE:IconicState ;already hidden
-                exwm-state)
-      (exwm--log "Hide #x%x" id)
-      (xcb:+request exwm--connection
-          (make-instance 'xcb:ChangeWindowAttributes
-                         :window id :value-mask xcb:CW:EventMask
-                         :event-mask xcb:EventMask:NoEvent))
-      (xcb:+request exwm--connection (make-instance 'xcb:UnmapWindow :window id))
-      (xcb:+request exwm--connection (make-instance 'xcb:UnmapWindow :window (frame-parameter exwm--frame 'exwm-inner-id)))
-      (xcb:+request exwm--connection
-          (make-instance 'xcb:ChangeWindowAttributes
-                         :window id :value-mask xcb:CW:EventMask
-                         :event-mask exwm--client-event-mask))
-      (xcb:+request exwm--connection
-          (make-instance 'xcb:icccm:set-WM_STATE
-                         :window id
-                         :state xcb:icccm:WM_STATE:IconicState
-                         :icon xcb:Window:None))
-      (xcb:flush exwm--connection))))
 
 (defun exwm-layout-set-fullscreen (&optional id)
   "Make window ID fullscreen."
@@ -193,7 +198,7 @@
                          :height (elt exwm--floating-frame-geometry 3))))
     (cl-assert exwm--fullscreen)
     (setq exwm--fullscreen nil)
-    (exwm-layout--show exwm--id)
+    (exwm-layout--show exwm--id nil)
     (xcb:+request exwm--connection
         (make-instance 'xcb:ewmh:set-_NET_WM_STATE :window exwm--id :data []))
     (xcb:flush exwm--connection)
@@ -232,17 +237,14 @@
       (dolist (pair exwm--id-buffer-alist)
         (when (cdr pair)
           (with-current-buffer (cdr pair)
-            (exwm-layout--hide exwm--id)
             ;; Exclude windows on invisible workspaces and floating frames
             (when (and exwm--frame
                        (frame-visible-p exwm--frame)
                        (not exwm--floating-frame))
               (setq windows (get-buffer-window-list (current-buffer) 0 'visible))
-              (if (not windows)
-                  (exwm-layout--hide exwm--id)
-                (exwm-layout--show exwm--id (car windows))
-                (dolist (i (cdr windows))
-                  (set-window-buffer i placeholder)))))))
+              (exwm-layout--show exwm--id (car windows))
+              (dolist (i (cdr windows))
+                (set-window-buffer i placeholder))))))
       ;; Make sure windows floating / on other workspaces are excluded
       (dolist (window (window-list frame 0))
         (with-current-buffer (window-buffer window)
