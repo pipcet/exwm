@@ -530,10 +530,10 @@
                                    xcb:Atom:_NET_WM_WINDOW_TYPE_DND
                                    xcb:Atom:_NET_WM_WINDOW_TYPE_NORMAL
                                    ;;
-                                   ;;xcb:Atom:_NET_WM_STATE
-                                   ;;xcb:Atom:_NET_WM_STATE_MODAL
-                                   ;;xcb:Atom:_NET_WM_STATE_FULLSCREEN
-                                   ;;xcb:Atom:_NET_WM_STATE_DEMANDS_ATTENTION
+                                   xcb:Atom:_NET_WM_STATE
+                                   xcb:Atom:_NET_WM_STATE_MODAL
+                                   xcb:Atom:_NET_WM_STATE_FULLSCREEN
+                                   xcb:Atom:_NET_WM_STATE_DEMANDS_ATTENTION
                                    ;; FIXME: more?
                                    )))
   ;; Create a child window for setting _NET_SUPPORTING_WM_CHECK
