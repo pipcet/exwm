@@ -76,10 +76,11 @@
   (let ((sequence (number-sequence 0 (1- exwm-workspace-number)))
         (not-empty (make-vector exwm-workspace-number nil)))
     (dolist (i exwm--id-buffer-alist)
-      (with-current-buffer (cdr i)
-        (when exwm--frame
-          (setf (elt not-empty (exwm-workspace-index exwm--frame))
-                t))))
+      (when (cdr i)
+        (with-current-buffer (cdr i)
+          (when exwm--frame
+            (setf (elt not-empty (exwm-workspace-index exwm--frame))
+                  t)))))
     (setq exwm-workspace--switch-history
           (mapcar
            (lambda (i)
