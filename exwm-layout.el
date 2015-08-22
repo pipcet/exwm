@@ -199,10 +199,10 @@
     (xcb:flush exwm--connection)
     (exwm-input-grab-keyboard)))
 
-(defun exwm-layout--refresh ()
+(defun exwm-layout--refresh (&optional frame)
   "Refresh layout."
-  (let ((frame (selected-frame))
-        (placeholder (get-buffer "*scratch*"))
+  (unless frame (setq frame (selected-frame)))
+  (let ((placeholder (get-buffer "*scratch*"))
         windows)
     (if (not (exwm-workspace-index frame))
         (if (frame-parameter frame 'exwm-window-id)
