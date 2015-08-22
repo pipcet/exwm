@@ -29,7 +29,7 @@
 
 ;;; Code:
 
-(defvar exwm-workspace-number 4 "Number of workspaces (1 ~ 10).")
+(defvar exwm-workspace-number 2 "Number of workspaces (1 ~ 10).")
 (defvar exwm-workspace--list nil "List of all workspaces (Emacs frames).")
 
 (defun exwm-workspace-index (frame)
