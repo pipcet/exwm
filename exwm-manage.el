@@ -42,7 +42,7 @@ corresponding buffer.")
         (when reply                     ;nil when destroyed
           (setq exwm--geometry reply))))))
 
-(defun exwm-manage--manage-window (id)
+(defun exwm-manage--manage-window (id &optional ignore)
   "Manage window ID."
   (exwm--log "Try to manage #x%x" id)
   (catch 'return
@@ -56,6 +56,9 @@ corresponding buffer.")
                              :window id :value-mask xcb:CW:EventMask
                              :event-mask exwm--client-event-mask))
       (throw 'return 'dead))
+    (when ignore
+      (push (cons id nil) exwm--id-buffer-alist)
+      (throw 'return 'ignored))
     (with-current-buffer (generate-new-buffer "*EXWM*")
       (push `(,id . ,(current-buffer)) exwm--id-buffer-alist)
       (exwm-mode)
