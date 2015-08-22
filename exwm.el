@@ -441,6 +441,39 @@
             (props (list (elt data 1) (elt data 2)))
             (buffer (exwm--id->buffer id))
             props-new)
+        (when (not buffer)
+          (dolist (f exwm-workspace--list)
+            (when (equal (frame-parameter f 'exwm-outer-id) id)
+              (let ((width (x-display-pixel-width))
+                    (height (x-display-pixel-height)))
+                (xcb:+request exwm--connection
+                    (make-instance 'xcb:ConfigureWindow
+                                   :window id
+                                   :value-mask (logior xcb:ConfigWindow:X
+                                                       xcb:ConfigWindow:Y
+                                                       xcb:ConfigWindow:Width
+                                                       xcb:ConfigWindow:Height)
+                                   :x 0 :y 0
+                                   :width width
+                                   :height height))
+                (xcb:+request exwm--connection
+                    (make-instance 'xcb:SendEvent
+                                   :propagate 0 :destination id
+                                   :event-mask xcb:EventMask:StructureNotify
+                                   :event (xcb:marshal
+                                           (make-instance 'xcb:ConfigureNotify
+                                                          :event id :window id
+                                                          :above-sibling xcb:Window:None
+                                                          :x 0 :y 0
+                                                          :width width :height height
+                                                          :border-width 0
+                                                          :override-redirect 0)
+                                           exwm--connection)))
+            (xcb:+request exwm--connection
+                    (make-instance 'xcb:ewmh:set-_NET_WM_STATE
+                                   :window id
+                                   :data (vector xcb:Atom:_NET_WM_STATE_FULLSCREEN)))
+                (xcb:flush exwm--connection)))))
         (when buffer                    ;ensure it's managed
           (with-current-buffer buffer
             ;; _NET_WM_STATE_MODAL
