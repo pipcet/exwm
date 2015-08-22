@@ -249,7 +249,9 @@
       (dolist (window (window-list frame 0))
         (with-current-buffer (window-buffer window)
           (when (and (eq major-mode 'exwm-mode)
-                     (or exwm--floating-frame (not (frame-visible-p exwm--frame))))
+                     (or exwm--floating-frame
+                         (not exwm--frame)
+                         (not (frame-visible-p exwm--frame))))
             (set-window-buffer window placeholder)))))))
 
 (defun exwm-layout--on-minibuffer-setup ()
