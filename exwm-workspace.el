@@ -192,7 +192,7 @@ The optional FORCE option is for internal use only."
                                  :window (frame-parameter exwm--floating-frame
                                                           'exwm-outer-id)
                                  :parent (frame-parameter frame
-                                                          'exwm-window-id)
+                                                          'exwm-inner-id)
                                  :x 0 :y 0))
               (xcb:flush exwm--connection))
           ;; Move the window itself
@@ -201,7 +201,7 @@ The optional FORCE option is for internal use only."
           (xcb:+request exwm--connection
               (make-instance 'xcb:ReparentWindow
                              :window id
-                             :parent (frame-parameter frame 'exwm-window-id)
+                             :parent (frame-parameter frame 'exwm-inner-id)
                              :x 0 :y 0))
           (when (frame-visible-p frame)
             (exwm-layout--show id (frame-first-window frame))
@@ -250,10 +250,21 @@ The optional FORCE option is for internal use only."
   ;; Configure workspaces
   (dolist (i exwm-workspace--list)
     (let ((window-id (string-to-int (frame-parameter i 'window-id)))
-          (outer-id (string-to-int (frame-parameter i 'outer-window-id))))
+          (outer-id (string-to-int (frame-parameter i 'outer-window-id)))
+          (inner-id (xcb:generate-id exwm--connection)))
+      (xcb:+request exwm--connection
+          (make-instance 'xcb:CreateWindow
+                         :parent window-id :depth 0 :wid inner-id
+                         :x 0 :y 0 :width 100 :height 100
+                         :border-width 0 :class 0 :visual 0 :value-mask 0
+                         ))
+
+      (xcb:+request exwm--connection
+          (make-instance 'xcb:MapWindow :window inner-id))
       ;; Save window IDs
       (set-frame-parameter i 'exwm-window-id window-id)
       (set-frame-parameter i 'exwm-outer-id outer-id)
+      (set-frame-parameter i 'exwm-inner-id inner-id)
       ;; Set OverrideRedirect on all frames
       (xcb:+request exwm--connection
           (make-instance 'xcb:ChangeWindowAttributes
@@ -263,6 +274,12 @@ The optional FORCE option is for internal use only."
       (xcb:+request exwm--connection
           (make-instance 'xcb:ChangeWindowAttributes
                          :window window-id :value-mask xcb:CW:EventMask
+                             :event-mask (logior xcb:EventMask:SubstructureRedirect
+                                                 xcb:EventMask:EnterWindow
+                                                 xcb:EventMask:LeaveWindow)))
+      (xcb:+request exwm--connection
+          (make-instance 'xcb:ChangeWindowAttributes
+                         :window inner-id :value-mask xcb:CW:EventMask
                              :event-mask (logior xcb:EventMask:SubstructureRedirect
                                                  xcb:EventMask:EnterWindow
                                                  xcb:EventMask:LeaveWindow)))))
