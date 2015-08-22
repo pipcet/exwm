@@ -230,7 +230,7 @@
                 (set-window-buffer window placeholder)))))
       ;; Refresh the whole workspace
       ;; Workspaces other than the active one can also be refreshed (RandR)
-      (exwm--log "Refresh workspace %s" frame)
+      ;;(exwm--log "Refresh workspace %s" frame)
       (unless placeholder  ;create the *scratch* buffer if it's killed
         (setq placeholder (get-buffer-create "*scratch*"))
         (set-buffer-major-mode placeholder))
