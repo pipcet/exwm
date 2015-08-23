@@ -585,7 +585,7 @@
                      :window exwm--root
                      :data (vconcat (mapcar
                                      (lambda (i)
-                                       (frame-parameter i 'exwm-inner-id))
+                                       (frame-parameter i 'exwm-window-id))
                                      exwm-workspace--list))))
   (xcb:flush exwm--connection))
 

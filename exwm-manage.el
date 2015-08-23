@@ -93,7 +93,7 @@ corresponding buffer.")
                   (make-instance 'xcb:ReparentWindow
                                  :window id
                                  :parent (frame-parameter exwm-workspace--current
-                                                          'exwm-inner-id)
+                                                          'exwm-window-id)
                                  :x x :y y))
               ;; Center window of type _NET_WM_WINDOW_TYPE_SPLASH
               (when (memq xcb:Atom:_NET_WM_WINDOW_TYPE_SPLASH exwm-window-type)
@@ -209,7 +209,6 @@ corresponding buffer.")
         (when (and (= 0 override-redirect) (= xcb:MapState:Viewable map-state)
                    (not (cl-some (lambda (f)
                                    (or (eq (frame-parameter f 'exwm-window-id) i)
-                                       (eq (frame-parameter f 'exwm-inner-id) i)
                                        (eq (frame-parameter f 'exwm-outer-id) i)))
                                  exwm-workspace--list)))
           (exwm-manage--manage-window i))))))

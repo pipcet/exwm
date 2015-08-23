@@ -59,20 +59,17 @@
             (exwm--log "Show #x%x in %s at %s" id window edges-rel-frame)
             (when buffer
               (with-current-buffer buffer
-                (xcb:+request exwm--connection
-                    (make-instance 'xcb:MapWindow
-                                   :window (frame-parameter frame 'exwm-inner-id)))
                 (xcb:flush exwm--connection)
-                (message "reparent %S to %S %S" id (frame-parameter frame 'exwm-inner-id)
+                (message "reparent %S to %S %S" id (frame-parameter frame 'exwm-window-id)
                          (xcb:+request-checked+request-check exwm--connection
                     (make-instance 'xcb:ReparentWindow
                                    :window id
-                                   :parent (frame-parameter frame 'exwm-inner-id)
+                                   :parent (frame-parameter frame 'exwm-window-id)
                                    :x 0 :y 0)))
                 (xcb:flush exwm--connection)
                 (xcb:+request exwm--connection
                     (make-instance 'xcb:ConfigureWindow
-                                   :window (frame-parameter frame 'exwm-inner-id)
+                                   :window (frame-parameter frame 'exwm-window-id)
                                    :value-mask (logior xcb:ConfigWindow:X
                                                        xcb:ConfigWindow:Y
                                                        xcb:ConfigWindow:Width
@@ -81,9 +78,6 @@
                                    :x x-rel-frame :y y-rel-frame :width width :height height
                                    ;; In order to put non-floating window at bottom
                                    :stack-mode xcb:StackMode:Above))
-                (xcb:+request exwm--connection
-                    (make-instance 'xcb:MapWindow
-                                   :window (frame-parameter frame 'exwm-inner-id)))))
             (xcb:+request exwm--connection
                 (make-instance 'xcb:ConfigureWindow
                                :window id
@@ -110,7 +104,6 @@
                                        exwm--connection)))))
         (when exwm--current-frame
           (exwm--log "Hide #x%x" id)
-          (xcb:+request exwm--connection (make-instance 'xcb:UnmapWindow :window (frame-parameter exwm--current-frame 'exwm-inner-id)))
           (when (not window)
             (xcb:+request exwm--connection
                 (make-instance 'xcb:ChangeWindowAttributes

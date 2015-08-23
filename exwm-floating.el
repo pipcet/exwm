@@ -55,7 +55,7 @@
                   exwm--frame)
               ;; Fallback to current workspace
               exwm-workspace--current)))
-         (original-id (frame-parameter original-frame 'exwm-inner-id))
+         (original-id (frame-parameter original-frame 'exwm-window-id))
          ;; Create new frame
          (frame (with-current-buffer "*scratch*"
                   (prog2
@@ -66,7 +66,7 @@
                          (internal-border-width . ,exwm-floating-border-width)
                          (unsplittable . t))) ;and fix the size later
                     (exwm--unlock))))
-         (frame-id (string-to-int (frame-parameter frame 'inner-id)))
+         (frame-id (string-to-int (frame-parameter frame 'window-id)))
          (outer-id (string-to-int (frame-parameter frame 'outer-window-id)))
          (window (frame-first-window frame)) ;and it's the only window
          (x (slot-value exwm--geometry 'x))
@@ -75,7 +75,6 @@
          (height (slot-value exwm--geometry 'height)))
     (exwm--log "Floating geometry (original): %dx%d%+d%+d" width height x y)
     ;; Save window IDs
-    (set-frame-parameter frame 'exwm-inner-id frame-id)
     (set-frame-parameter frame 'exwm-window-id frame-id)
     (set-frame-parameter frame 'exwm-outer-id outer-id)
     ;; Fix illegal parameters
@@ -198,7 +197,7 @@
         (make-instance 'xcb:ReparentWindow
                        :window id
                        :parent (frame-parameter frame
-                                                'exwm-inner-id)
+                                                'exwm-window-id)
                        :x 0 :y 0))      ;temporary position
     (xcb:+request exwm--connection
         (make-instance 'xcb:ChangeWindowAttributes
