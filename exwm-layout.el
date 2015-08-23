@@ -221,11 +221,12 @@
 
 With KEEP-X non-nil, keep x position and width; with KEEP-Y
 non-nil, keep y position and height."
-  (let* ((screen-geometry (exwm-layout--fullscreen-geometry))
+  (let* ((screen-geometry (exwm-layout--fullscreen-geometry frame))
+         (id (frame-parameter frame 'exwm-outer-id))
          (window-geometry
           (xcb:+request-unchecked+reply exwm--connection
               (make-instance 'xcb:GetGeometry
-                             :drawable (frame-parameter frame 'outer-id))))
+                             :drawable id)))
          (x (slot-value screen-geometry 'x))
          (y (slot-value screen-geometry 'y))
          (width (slot-value screen-geometry 'width))
@@ -298,7 +299,8 @@ non-nil, keep y position and height."
             (when (and exwm--frame
                        (frame-visible-p exwm--frame)
                        (not exwm--floating-frame))
-              (setq windows (get-buffer-window-list (current-buffer) 0 'visible))
+              (setq windows
+                    (get-buffer-window-list (current-buffer) 0 'visible))
               (exwm-layout--show exwm--id (car windows))
               (dolist (i (cdr windows))
                 (set-window-buffer i placeholder))))))
