@@ -28,12 +28,12 @@
 
 (defun exwm-layout--show (id window)
   "Show window ID exactly fit in the Emacs window WINDOW."
-  (exwm--log "Show #x%x in %s" id window)
   (let* ((buffer (exwm--id->buffer id))
          (frame (and window (window-frame window))))
     (cl-assert buffer)
     (with-current-buffer buffer
       (unless (eq frame exwm--current-frame)
+        (exwm--log "Show #x%x in %s" id window)
         (when window
           (xcb:+request exwm--connection (make-instance 'xcb:MapWindow :window id))
           (xcb:+request exwm--connection
