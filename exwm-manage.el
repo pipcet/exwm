@@ -206,7 +206,9 @@ corresponding buffer.")
       (with-slots (override-redirect map-state)
           (xcb:+request-unchecked+reply exwm--connection
               (make-instance 'xcb:GetWindowAttributes :window i))
-        (when (and (= 0 override-redirect) (= xcb:MapState:Viewable map-state))
+        (when (and (= 0 override-redirect) (= xcb:MapState:Viewable map-state)
+                   (not (cl-some (lambda (f) (eq (frame-parameter f 'exwm-window-id) i))
+                                 exwm-workspace--list)))
           (exwm-manage--manage-window i))))))
 
 (defvar exwm-manage--ping-lock nil
