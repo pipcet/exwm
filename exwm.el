@@ -158,15 +158,16 @@
 
 (defvar exwm--connection nil "X connection.")
 (defvar exwm--root nil "Root window.")
-(defvar exwm--id-buffer-alist nil "Alist of (<X window ID> . <Emacs buffer>)")
+(defvar exwm--id-alist nil "Alist of (<X window ID> . <Emacs object>)")
 
 (defsubst exwm--id->buffer (id)
   "X window ID => Emacs buffer."
-  (cdr (assoc id exwm--id-buffer-alist)))
+  (let ((o (cdr (assoc id exwm--id-alist))))
+    (and (bufferp o) o)))
 
 (defsubst exwm--buffer->id (buffer)
   "Emacs buffer => X window ID."
-  (car (rassoc buffer exwm--id-buffer-alist)))
+  (car (rassoc buffer exwm--id-alist)))
 
 (defun exwm--lock (&rest args)          ;args are for abnormal hook
   "Lock (disable all events)."
@@ -184,6 +185,7 @@
                      :window exwm--root
                      :value-mask xcb:CW:EventMask
                      :event-mask (logior xcb:EventMask:StructureNotify
+                                         xcb:EventMask:SubstructureNotify
                                          xcb:EventMask:SubstructureRedirect)))
   (xcb:flush exwm--connection))
 

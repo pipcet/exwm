@@ -192,16 +192,17 @@
       (unless placeholder  ;create the *scratch* buffer if it's killed
         (setq placeholder (get-buffer-create "*scratch*"))
         (set-buffer-major-mode placeholder))
-      (dolist (pair exwm--id-buffer-alist)
-        (with-current-buffer (cdr pair)
-          ;; Exclude windows on other workspaces and floating frames
-          (when (and (eq frame exwm--frame) (not exwm--floating-frame))
-            (setq windows (get-buffer-window-list (current-buffer) 0))
-            (if (not windows)
-                (exwm-layout--hide exwm--id)
-              (exwm-layout--show exwm--id (car windows))
-              (dolist (i (cdr windows))
-                (set-window-buffer i placeholder))))))
+      (dolist (pair exwm--id-alist)
+        (when (bufferp (cdr pair))
+          (with-current-buffer (cdr pair)
+            ;; Exclude windows on other workspaces and floating frames
+            (when (and (eq frame exwm--frame) (not exwm--floating-frame))
+              (setq windows (get-buffer-window-list (current-buffer) 0))
+              (if (not windows)
+                  (exwm-layout--hide exwm--id)
+                (exwm-layout--show exwm--id (car windows))
+                (dolist (i (cdr windows))
+                  (set-window-buffer i placeholder)))))))
       ;; Make sure windows floating / on other workspaces are excluded
       (dolist (window (window-list frame 0))
         (with-current-buffer (window-buffer window)

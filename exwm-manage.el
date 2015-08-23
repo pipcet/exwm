@@ -46,9 +46,9 @@ corresponding buffer.")
   "Manage window ID."
   (exwm--log "Try to manage #x%x" id)
   (catch 'return
-    ;; Ensure it's not managed
-    (when (assoc id exwm--id-buffer-alist)
-      (exwm--log "#x%x is already managed" id)
+    ;; Ensure it's an unmanaged top-level window
+    (unless (eq (cdr (assoc id exwm--id-alist)) 'withdrawn)
+      (exwm--log "#x%x is not an unmanaged top-level window" id)
       (throw 'return 'managed))
     ;; Ensure it's alive
     (when (xcb:+request-checked+request-check exwm--connection
@@ -57,7 +57,7 @@ corresponding buffer.")
                              :event-mask exwm--client-event-mask))
       (throw 'return 'dead))
     (with-current-buffer (generate-new-buffer "*EXWM*")
-      (push `(,id . ,(current-buffer)) exwm--id-buffer-alist)
+      (push `(,id . ,(current-buffer)) exwm--id-alist)
       (exwm-mode)
       (setq exwm--id id)
       (exwm--update-window-type id)
@@ -109,7 +109,7 @@ corresponding buffer.")
                                      2)))))
         (xcb:flush exwm--connection)
         (setq kill-buffer-query-functions nil)
-        (setq exwm--id-buffer-alist (assq-delete-all id exwm--id-buffer-alist))
+        (setcdr (assoc id exwm--id-alist) 'ignored)
         (kill-buffer (current-buffer))
         (throw 'return 'ignored))
       ;; Manage the window
@@ -149,8 +149,8 @@ corresponding buffer.")
   "Unmanage window ID."
   (let ((buffer (exwm--id->buffer id)))
     (exwm--log "Unmanage #x%x (buffer: %s)" id buffer)
-    (setq exwm--id-buffer-alist (assq-delete-all id exwm--id-buffer-alist))
     (when (buffer-live-p buffer)
+      (setcdr (assoc id exwm--id-alist) 'withdrawn)
       (with-current-buffer buffer
         (exwm-workspace--update-switch-history)
         ;;
@@ -331,6 +331,15 @@ corresponding buffer.")
       (exwm--log "UnmapNotify from #x%x" (slot-value obj 'window))
       (exwm-manage--unmanage-window (slot-value obj 'window) t))))
 
+(defun exwm-manage--on-CreateNotify (data synthetic)
+  "Handle CreateNotify event."
+  (unless synthetic
+    (let ((obj (make-instance 'xcb:CreateNotify)))
+      (xcb:unmarshal obj data)
+      (exwm--log "CreateNotify from #x%x" (slot-value obj 'window))
+      (when (eq (slot-value obj 'parent) exwm--root)
+        (push (cons (slot-value obj 'window) 'withdrawn) exwm--id-alist)))))
+
 (defun exwm-manage--on-DestroyNotify (data synthetic)
   "Handle DestroyNotify event."
   (unless synthetic
@@ -345,6 +354,8 @@ corresponding buffer.")
               'exwm-manage--on-ConfigureRequest)
   (xcb:+event exwm--connection 'xcb:MapRequest 'exwm-manage--on-MapRequest)
   (xcb:+event exwm--connection 'xcb:UnmapNotify 'exwm-manage--on-UnmapNotify)
+  (xcb:+event exwm--connection 'xcb:CreateNotify
+              'exwm-manage--on-CreateNotify)
   (xcb:+event exwm--connection 'xcb:DestroyNotify
               'exwm-manage--on-DestroyNotify))
 

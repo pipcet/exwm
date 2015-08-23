@@ -124,11 +124,12 @@ It's updated in several occasions, and only used by `exwm-input--set-focus'.")
           (exwm--log "Focus on %s" exwm-input--focus-window)
           (select-frame-set-input-focus (window-frame exwm-input--focus-window)
                                         t)
-          (dolist (pair exwm--id-buffer-alist)
-            (with-current-buffer (cdr pair)
-              (when (and exwm--floating-frame
-                         (eq exwm--frame exwm-workspace--current))
-                (redirect-frame-focus exwm--floating-frame exwm--frame))))))
+          (dolist (pair exwm--id-alist)
+            (when (bufferp (cdr pair))
+              (with-current-buffer (cdr pair)
+                (when (and exwm--floating-frame
+                           (eq exwm--frame exwm-workspace--current))
+                  (redirect-frame-focus exwm--floating-frame exwm--frame)))))))
       (setq exwm-input--focus-window nil))))
 
 (defun exwm-input--finish-key-sequence ()

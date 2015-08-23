@@ -66,11 +66,12 @@
   "Update the history for switching workspace to reflect the latest status."
   (let ((sequence (number-sequence 0 (1- exwm-workspace-number)))
         (not-empty (make-vector exwm-workspace-number nil)))
-    (dolist (i exwm--id-buffer-alist)
-      (with-current-buffer (cdr i)
-        (when exwm--frame
-          (setf (elt not-empty (cl-position exwm--frame exwm-workspace--list))
-                t))))
+    (dolist (i exwm--id-alist)
+      (when (bufferp (cdr i))
+        (with-current-buffer (cdr i)
+          (when exwm--frame
+            (setf (elt not-empty (cl-position exwm--frame exwm-workspace--list))
+                  t)))))
     (setq exwm-workspace--switch-history
           (mapcar
            (lambda (i)
@@ -128,12 +129,13 @@ The optional FORCE option is for internal use only."
             (set-mouse-pixel-position frame x y)))
         (setq default-minibuffer-frame frame)
         ;; Hide windows in other workspaces by preprending a space
-        (dolist (i exwm--id-buffer-alist)
-          (with-current-buffer (cdr i)
-            (let ((name (replace-regexp-in-string "^\\s-*" "" (buffer-name))))
-              (exwm-workspace-rename-buffer (if (eq frame exwm--frame)
-                                                name
-                                              (concat " " name))))))
+        (dolist (i exwm--id-alist)
+          (when (bufferp (cdr i))
+            (with-current-buffer (cdr i)
+              (let ((name (replace-regexp-in-string "^\\s-*" "" (buffer-name))))
+                (exwm-workspace-rename-buffer (if (eq frame exwm--frame)
+                                                  name
+                                                (concat " " name)))))))
         ;; Update demands attention flag
         (set-frame-parameter frame 'exwm--urgency nil)
         ;; Update switch workspace history
@@ -219,7 +221,7 @@ The optional FORCE option is for internal use only."
   ;; Prevent unexpected exit
   (setq confirm-kill-emacs
         (lambda (prompt)
-          (pcase (length exwm--id-buffer-alist)
+          (pcase (cl-count-if (lambda (pair) (bufferp (cdr pair))) exwm--id-alist)
             (0 (y-or-n-p prompt))
             (x (yes-or-no-p (format "[EXWM] %d window%s currently alive. %s"
                                     x (if (= x 1) "" "s") prompt))))))
@@ -245,6 +247,8 @@ The optional FORCE option is for internal use only."
       ;; Save window IDs
       (set-frame-parameter i 'exwm-window-id window-id)
       (set-frame-parameter i 'exwm-outer-id outer-id)
+      ;; Register top-level window
+      (push (cons outer-id i) exwm--id-alist)
       ;; Set OverrideRedirect on all frames
       (xcb:+request exwm--connection
           (make-instance 'xcb:ChangeWindowAttributes
