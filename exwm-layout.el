@@ -203,6 +203,15 @@
     (xcb:flush exwm--connection)
     (exwm-input-grab-keyboard)))
 
+(defun exwm-layout--fullscreen-geometry (frame)
+  "Return the monitor geometry for frame FRAME."
+  (or (frame-parameter frame 'exwm-geometry)
+      (xcb:+request-unchecked+reply exwm--connection
+          (make-instance 'xcb:GetGeometry
+                         :drawable exwm--root))
+      (make-instance 'xcb:RECTANGLE :x 0 :y 0
+                     :width (x-display-width) :height (x-display-height))))
+
 (defun exwm-layout--refresh (&optional frame)
   "Refresh layout."
   (unless frame (setq frame (selected-frame)))
