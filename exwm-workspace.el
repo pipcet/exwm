@@ -240,7 +240,8 @@ The optional FORCE option is for internal use only."
   ;; Create remaining frames
   (while (< (length exwm-workspace--list) exwm-workspace-number)
     (nconc exwm-workspace--list
-           (list (make-frame '((window-system . x) (fullscreen . fullboth))))))
+           (list (make-frame '((window-system . x) (fullscreen . fullboth)
+                               (visibility . nil))))))
   ;; Configure workspaces
   (dolist (i exwm-workspace--list)
     (let ((window-id (string-to-int (frame-parameter i 'window-id)))
@@ -285,6 +286,10 @@ The optional FORCE option is for internal use only."
                                                  xcb:EventMask:EnterWindow
                                                  xcb:EventMask:LeaveWindow)))))
   (xcb:flush exwm--connection)
+  ;; We have to delay making the frame visible until the
+  ;; override-redirect flag has been set.
+  (dolist (i exwm-workspace--list)
+    (set-frame-parameter i 'visibility t))
   ;; Switch to the first workspace
   (exwm-workspace-switch 0 t))
 
