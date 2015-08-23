@@ -59,7 +59,7 @@ corresponding buffer.")
     (when ignore
       (push (cons id nil) exwm--id-buffer-alist)
       (throw 'return 'ignored))
-    (with-current-buffer (generate-new-buffer "*EXWM*")
+    (with-current-buffer (generate-new-buffer (format "*0x%x*" id))
       (push `(,id . ,(current-buffer)) exwm--id-buffer-alist)
       (exwm-mode)
       (setq exwm--id id)
