@@ -617,14 +617,14 @@
         ;; (xcb:icccm:init exwm--connection)
         (xcb:ewmh:init exwm--connection)
         (exwm--lock)
-        (exwm-workspace--init)
         (exwm--init-icccm-ewmh)
         (exwm-layout--init)
         (exwm-floating--init)
         (exwm-manage--init)
         (exwm-input--init)
         (exwm--unlock)
-        ;; Manage exiting windows
+        (exwm-workspace--init)
+        ;; Manage existing windows
         (exwm-manage--scan)
         (run-hooks 'exwm-init-hook)))))
 
