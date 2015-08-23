@@ -120,7 +120,7 @@
                                :state xcb:icccm:WM_STATE:IconicState
                                :icon xcb:Window:None))))
         (setq exwm--current-frame frame))))
-  (xcb:flush exwm--connection))
+  (xcb:flush exwm--connection))))
 
 (defun exwm-layout-set-fullscreen (&optional id)
   "Make window ID fullscreen."

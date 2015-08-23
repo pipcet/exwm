@@ -284,50 +284,52 @@ corresponding buffer.")
         buffer edges)
     (xcb:unmarshal obj data)
     (with-slots (stack-mode (id window) sibling x y width height border-width
-                            value-mask)
+                            parent value-mask)
         obj
-      (let ((wa (xcb:+request-unchecked+reply exwm--connection
-                    (make-instance 'xcb:GetWindowAttributes
-                                   :window id))))
-        (exwm--log "ConfigureRequest from #x%x (#x%x) @%dx%d%+d%+d, border: %d: %S %S"
-                   value-mask id width height x y border-width obj wa)
-        (exwm-manage--manage-window id)
-        (redisplay)
-        (if (setq buffer (exwm--id->buffer id))
-            ;; Send client message for managed windows
-            (with-current-buffer buffer
-              (setq edges
-                    (if exwm--fullscreen
-                        (list 0 0
-                              (frame-pixel-width exwm-workspace--current)
-                              (frame-pixel-height exwm-workspace--current))
-                      (or exwm--floating-edges
-                          (window-inside-absolute-pixel-edges
-                           (get-buffer-window)))))
-              (exwm--log "Reply with ConfigureNotify (edges): %s" edges)
-              (xcb:+request exwm--connection
-                  (make-instance 'xcb:SendEvent
-                                 :propagate 0 :destination id
-                                 :event-mask xcb:EventMask:StructureNotify
-                                 :event (xcb:marshal
-                                         (make-instance
-                                          'xcb:ConfigureNotify
-                                          :event id :window id
-                                          :above-sibling xcb:Window:None
-                                          :x (elt edges 0) :y (elt edges 1)
-                                          :width (- (elt edges 2) (elt edges 0))
-                                          :height (- (elt edges 3) (elt edges 1))
-                                          :border-width 0 :override-redirect 0)
-                                         exwm--connection))))
-          (exwm--log "ConfigureWindow (preserve geometry)")
-          ;; Configure unmanaged windows
-          (xcb:+request exwm--connection
-              (make-instance 'xcb:ConfigureWindow
-                             :window id
-                             :value-mask value-mask
-                             :x x :y y :width width :height height
-                             :border-width border-width
-                             :sibling sibling :stack-mode stack-mode))))))
+      (unless (equal parent (frame-parameter exwm-workspace--current
+                                             'exwm-window-id))
+        (let ((wa (xcb:+request-unchecked+reply exwm--connection
+                      (make-instance 'xcb:GetWindowAttributes
+                                     :window id))))
+          (exwm--log "ConfigureRequest from #x%x (#x%x) @%dx%d%+d%+d, border: %d: %S %S"
+                     value-mask id width height x y border-width obj wa)
+          (exwm-manage--manage-window id)
+          (redisplay)
+          (if (setq buffer (exwm--id->buffer id))
+              ;; Send client message for managed windows
+              (with-current-buffer buffer
+                (setq edges
+                      (if exwm--fullscreen
+                          (list 0 0
+                                (frame-pixel-width exwm-workspace--current)
+                                (frame-pixel-height exwm-workspace--current))
+                        (or exwm--floating-edges
+                            (window-inside-absolute-pixel-edges
+                             (get-buffer-window)))))
+                (exwm--log "Reply with ConfigureNotify (edges): %s" edges)
+                (xcb:+request exwm--connection
+                    (make-instance 'xcb:SendEvent
+                                   :propagate 0 :destination id
+                                   :event-mask xcb:EventMask:StructureNotify
+                                   :event (xcb:marshal
+                                           (make-instance
+                                            'xcb:ConfigureNotify
+                                            :event id :window id
+                                            :above-sibling xcb:Window:None
+                                            :x (elt edges 0) :y (elt edges 1)
+                                            :width (- (elt edges 2) (elt edges 0))
+                                            :height (- (elt edges 3) (elt edges 1))
+                                            :border-width 0 :override-redirect 0)
+                                           exwm--connection))))
+            (exwm--log "ConfigureWindow (preserve geometry)")
+            ;; Configure unmanaged windows
+            (xcb:+request exwm--connection
+                (make-instance 'xcb:ConfigureWindow
+                               :window id
+                               :value-mask value-mask
+                               :x x :y y :width width :height height
+                               :border-width border-width
+                               :sibling sibling :stack-mode stack-mode)))))))
   (xcb:flush exwm--connection))
 
 (defun exwm-manage--on-MapRequest (data synthetic)

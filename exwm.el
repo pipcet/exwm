@@ -445,10 +445,16 @@
         (when (and (not buffer)
                    (memq xcb:Atom:_NET_WM_STATE_FULLSCREEN props))
           (dolist (f exwm-workspace--list)
-            (when (equal (frame-parameter f 'exwm-outer-id) id)
-              (cond ((= action xcb:ewmh:_NET_WM_STATE_ADD)
-                     (exwm-layout--set-frame-fullscreen f)
-                     (push xcb:Atom:_NET_WM_STATE_FULLSCREEN props-new))))))
+            (when (and (equal (frame-parameter f 'exwm-outer-id) id)
+		       (= action xcb:ewmh:_NET_WM_STATE_ADD))
+	      (exwm-layout--set-frame-fullscreen f)
+	      (xcb:+request
+                  exwm--connection
+                  (make-instance 'xcb:ewmh:set-_NET_WM_STATE
+                                 :window id
+                                 :data (vector
+                                        xcb:Atom:_NET_WM_STATE_FULLSCREEN)))
+	      (xcb:flush exwm--connection))))
         (when buffer                    ;ensure it's managed
           (with-current-buffer buffer
             ;; _NET_WM_STATE_MODAL
