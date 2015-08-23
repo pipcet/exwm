@@ -282,9 +282,7 @@ The optional FORCE option is for internal use only."
       (xcb:+request exwm--connection
           (make-instance 'xcb:ChangeWindowAttributes
                          :window inner-id :value-mask xcb:CW:EventMask
-                             :event-mask (logior xcb:EventMask:SubstructureRedirect
-                                                 xcb:EventMask:EnterWindow
-                                                 xcb:EventMask:LeaveWindow)))))
+                         :event-mask (logior xcb:EventMask:SubstructureRedirect)))))
   (xcb:flush exwm--connection)
   ;; We have to delay making the frame visible until the
   ;; override-redirect flag has been set.
