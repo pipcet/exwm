@@ -212,6 +212,55 @@
       (make-instance 'xcb:RECTANGLE :x 0 :y 0
                      :width (x-display-width) :height (x-display-height))))
 
+;; This function is superficially similar to `exwm-layout-set-fullscreen', but
+;; they do very different things: `exwm-layout--set-frame-fullscreen' resizes a
+;; frame to the actual monitor size, `exwm-layout-set-fullscreen' resizes an X
+;; window to the frame size.
+(defun exwm-layout--set-frame-fullscreen (frame &optional keep-x keep-y)
+  "Make frame FRAME fullscreen, with regard to its XRandR output if applicable.\
+
+With KEEP-X non-nil, keep x position and width; with KEEP-Y
+non-nil, keep y position and height."
+  (let* ((screen-geometry (exwm-layout--fullscreen-geometry))
+         (window-geometry
+          (xcb:+request-unchecked+reply exwm--connection
+              (make-instance 'xcb:GetGeometry
+                             :drawable (frame-parameter frame 'outer-id))))
+         (x (slot-value screen-geometry 'x))
+         (y (slot-value screen-geometry 'y))
+         (width (slot-value screen-geometry 'width))
+         (height (slot-value screen-geometry 'height)))
+    (when keep-x
+      (setq x (slot-value window-geometry 'x))
+      (setq width (slot-value window-geometry 'width)))
+    (when keep-y
+      (setq y (slot-value window-geometry 'y))
+      (setq height (slot-value window-geometry 'height)))
+    (xcb:+request exwm--connection
+        (make-instance 'xcb:ConfigureWindow
+                       :window id
+                       :value-mask (logior xcb:ConfigWindow:X
+                                           xcb:ConfigWindow:Y
+                                           xcb:ConfigWindow:Width
+                                           xcb:ConfigWindow:Height)
+                       :x x :y y
+                       :width width
+                       :height height))
+    (xcb:+request exwm--connection
+        (make-instance 'xcb:SendEvent
+                       :propagate 0 :destination id
+                       :event-mask xcb:EventMask:StructureNotify
+                       :event (xcb:marshal
+                               (make-instance 'xcb:ConfigureNotify
+                                              :event id :window id
+                                              :above-sibling xcb:Window:None
+                                              :x x :y y
+                                              :width width :height height
+                                              :border-width 0
+                                              :override-redirect 0)
+                               exwm--connection)))
+    (xcb:flush exwm--connection)))
+
 (defun exwm-layout--refresh (&optional frame)
   "Refresh layout."
   (unless frame (setq frame (selected-frame)))
