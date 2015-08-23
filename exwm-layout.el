@@ -218,6 +218,9 @@
                                               exwm--floating-frame)))
                            (exwm-layout--refresh)))))
 
+(advice-add 'window--resize-root-window-vertically
+            :after (lambda (&rest args) (exwm-layout--refresh)))
+
 (defun exwm-layout--init ()
   "Initialize layout module."
   ;; Auto refresh layout
