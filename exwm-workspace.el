@@ -264,6 +264,14 @@ The optional FORCE option is for internal use only."
           (make-instance 'xcb:ChangeWindowAttributes
                          :window outer-id :value-mask xcb:CW:OverrideRedirect
                          :override-redirect 1))
+      (xcb:+request exwm--connection
+          (make-instance 'xcb:ChangeWindowAttributes
+                         :window window-id :value-mask xcb:CW:OverrideRedirect
+                         :override-redirect 1))
+      (xcb:+request exwm--connection
+          (make-instance 'xcb:ChangeWindowAttributes
+                         :window inner-id :value-mask xcb:CW:OverrideRedirect
+                         :override-redirect 1))
       ;; Select events on all virtual roots
       (xcb:+request exwm--connection
           (make-instance 'xcb:ChangeWindowAttributes
