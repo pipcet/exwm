@@ -209,24 +209,13 @@
                      (or exwm--floating-frame (not (eq frame exwm--frame))))
             (set-window-buffer window placeholder)))))))
 
-(defun exwm-layout--on-minibuffer-setup ()
-  "Refresh layout when minibuffer grows."
-  (run-with-idle-timer 0.01 nil         ;FIXME
-                       (lambda ()
-                         (when (and (< 1 (window-height (minibuffer-window)))
-                                    (not (and (eq major-mode 'exwm-mode)
-                                              exwm--floating-frame)))
-                           (exwm-layout--refresh)))))
-
 (advice-add 'window--resize-root-window-vertically
             :after (lambda (&rest args) (exwm-layout--refresh)))
 
 (defun exwm-layout--init ()
   "Initialize layout module."
   ;; Auto refresh layout
-  (add-hook 'window-configuration-change-hook 'exwm-layout--refresh)
-  ;; Refresh when minibuffer grows
-  (add-hook 'minibuffer-setup-hook 'exwm-layout--on-minibuffer-setup t))
+  (add-hook 'window-configuration-change-hook 'exwm-layout--refresh))
 
 
 
