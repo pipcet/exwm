@@ -336,8 +336,13 @@ corresponding buffer.")
   "Handle MapRequest event."
   (let ((obj (make-instance 'xcb:MapRequest)))
     (xcb:unmarshal obj data)
-    (exwm--log "MapRequest from #x%x" (slot-value obj 'window))
-    (exwm-manage--manage-window (slot-value obj 'window))))
+    (with-slots (parent window) obj
+      (if (/= exwm--root parent)
+          (progn (xcb:+request exwm--connection
+                     (make-instance xcb:MapWindow :window window))
+                 (xcb:flush exwm--connection))
+        (exwm--log "MapRequest from #x%x" window)
+        (exwm-manage--manage-window window)))))
 
 (defun exwm-manage--on-UnmapNotify (data synthetic)
   "Handle UnmapNotify event."
