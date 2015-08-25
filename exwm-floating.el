@@ -257,7 +257,7 @@
       (with-slots (root-x root-y win-x win-y)
           (xcb:+request-unchecked+reply exwm--connection
               (make-instance 'xcb:QueryPointer :window id))
-        (select-frame-set-input-focus frame) ;raise and focus it
+        (exwm--select-frame frame)
         (setq width (frame-pixel-width frame)
               height (frame-pixel-height frame))
         (unless type
