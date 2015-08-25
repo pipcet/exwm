@@ -124,6 +124,7 @@ The optional FORCE option is for internal use only."
         (setq exwm-workspace--current frame
               exwm-workspace-current-index index)
         (select-frame frame)
+        (raise-frame frame)
         (exwm-input--set-focus (frame-parameter frame 'exwm-outer-id))
         (setq default-minibuffer-frame frame)
         ;; Update demands attention flag
@@ -260,8 +261,8 @@ The optional FORCE option is for internal use only."
       (xcb:+request exwm--connection
           (make-instance 'xcb:ChangeWindowAttributes
                          :window window-id :value-mask xcb:CW:EventMask
-                             :event-mask (logior xcb:EventMask:EnterWindow
-                                                 xcb:EventMask:LeaveWindow)))))
+                         :event-mask (logior xcb:EventMask:EnterWindow
+                                             xcb:EventMask:LeaveWindow)))))
   (xcb:flush exwm--connection)
   ;; We have to delay making the frame visible until the
   ;; override-redirect flag has been set.

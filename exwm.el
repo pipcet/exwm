@@ -153,7 +153,10 @@
     `(message (concat "[EXWM] " ,format-string) ,@args)))
 
 (defconst exwm--client-event-mask
-  (logior xcb:EventMask:StructureNotify xcb:EventMask:PropertyChange xcb:EventMask:EnterWindow xcb:EventMask:LeaveWindow)
+  (logior xcb:EventMask:StructureNotify
+          xcb:EventMask:PropertyChange
+          xcb:EventMask:EnterWindow
+          xcb:EventMask:LeaveWindow)
   "Event mask set on all managed windows.")
 
 (defvar exwm--connection nil "X connection.")
@@ -198,7 +201,8 @@
     (when (eq major-mode 'exwm-mode)
       (when exwm--fullscreen (exwm-layout-unset-fullscreen))
       ;; Force refresh
-      (exwm-layout--refresh)
+      (dolist (window (window-list-1))
+        (exwm-layout--refresh-window window))
       (exwm-input-grab-keyboard))))
 
 (defun exwm--update-window-type (id &optional force)
@@ -651,6 +655,7 @@
   ;; Internal variables
   (make-local-variable 'exwm--id)              ;window id
   (set (make-local-variable 'exwm--frame) nil) ;workspace frame
+  (set (make-local-variable 'exwm--dimensions) nil)
   (set (make-local-variable 'exwm--current-frame) nil) ;workspace frame
   (set (make-local-variable 'exwm--floating-frame) nil) ;floating frame
   (set (make-local-variable 'exwm--floating-edges) nil) ;four edges
