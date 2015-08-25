@@ -628,6 +628,13 @@
         (exwm-floating--init)
         (exwm-manage--init)
         (exwm-input--init)
+        (add-function :before (symbol-function 'x-select-font)
+                      (lambda (&rest args)
+                        (define-key global-map (kbd "C-g") (lambda () (interactive) (throw 'exit nil)))))
+        (add-function :after (symbol-function 'x-select-font)
+                      (lambda (&rest args)
+                        ;; XXX do something here to restore the original key binding
+                        ))
         (exwm--unlock)
         (exwm-workspace--init)
         ;; Manage existing windows

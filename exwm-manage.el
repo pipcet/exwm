@@ -323,7 +323,7 @@ corresponding buffer.")
     (with-slots (parent window) obj
       (if (/= exwm--root parent)
           (progn (xcb:+request exwm--connection
-                     (make-instance xcb:MapWindow :window window))
+                     (make-instance 'xcb:MapWindow :window window))
                  (xcb:flush exwm--connection))
         (exwm--log "MapRequest from #x%x" window)
         (exwm-manage--manage-window window)))))
